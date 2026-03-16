@@ -30,6 +30,7 @@ PORTFOLIO = [
     "BG",  # Bunge Global
     "O",  # Realty Income
     "JNJ",  # Johnson & Johnson
+    "BIP",  # Brookfield Infraestructure Corp
 ]
 
 
