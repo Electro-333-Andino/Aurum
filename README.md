@@ -9,6 +9,13 @@
 *   **Fácil de Usar:** Simplemente ejecuta el script para obtener tu informe de inversión diario.
 *   **Personalizable:** Modifica fácilmente la lista `PORTFOLIO` en `src/modules/prices.py` para rastrear tus propias acciones.
 
+## Funcionalidades Principales
+
+- Obtener los precios de las acciones en tiempo real para tu portafolio desde Yahoo Finance.
+- Recopilar noticias macroeconómicas relevantes para proporcionar contexto de mercado.
+- Realizar análisis detallados y recolectar el sentimiento de las noticias para empresas individuales utilizando Finnhub.
+- Mostrar toda esta información en una salida clara y formateada directamente en tu terminal.
+
 ## Cómo Empezar
 
 1.  **Clona el repositorio:**
