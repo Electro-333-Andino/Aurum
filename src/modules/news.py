@@ -13,9 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 # Módulo responsable ÚNICAMENTE de noticias macroeconómicas desde Reuters.
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import feedparser
 from deep_translator import GoogleTranslator
@@ -84,6 +85,7 @@ def translate(text: str | None) -> str:
 def parse_published_date(entry) -> str:
     """
     Convierte la fecha de publicación a formato legible.
+    Usa UTC-5 (hora Ecuador) para el cálculo correcto.
 
     Args:
         entry: Entrada del feed RSS.
@@ -92,21 +94,25 @@ def parse_published_date(entry) -> str:
         String con tiempo relativo. Ejemplo: 'hace 2 horas'
     """
     try:
-        published = datetime.fromtimestamp(
-            time.mktime(entry.published_parsed), tz=timezone.utc
-        )
-        now = datetime.now(tz=timezone.utc)
-        seconds = (now - published).total_seconds()
+        # Convertimos la fecha del feed a timestamp
+        published_timestamp = time.mktime(entry.published_parsed)
+        # Obtenemos el tiempo actual en UTC-5 (Ecuador)
+        ecuador_tz = timezone(timedelta(hours=-5))
+        now_timestamp = datetime.now(tz=ecuador_tz).timestamp()
+        seconds = now_timestamp - published_timestamp
 
-        # Si el tiempo es negativo o cero mostramos 'hace moments'
         if seconds <= 0:
-            return "hace momentos"
-        elif seconds < 3600:
-            return f"hace {int(seconds / 60)} minutos"
+            seconds = abs(seconds)
+
+        if seconds < 3600:
+            minutes = int(seconds / 60)
+            return f"hace {minutes} minuto{'s' if minutes != 1 else ''}"
         elif seconds < 86400:
-            return f"hace {int(seconds / 3600)} horas"
+            hours = int(seconds / 3600)
+            return f"hace {hours} hora{'s' if hours != 1 else ''}"
         else:
-            return f"hace {int(seconds / 86400)} días"
+            days = int(seconds / 86400)
+            return f"hace {days} día{'s' if days != 1 else ''}"
 
     except Exception:
         return "fecha desconocida"
