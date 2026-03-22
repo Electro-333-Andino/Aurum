@@ -171,3 +171,51 @@ def display_upcoming_earnings(upcoming: list[dict]) -> None:
         )
 
     console.print(table)
+
+
+def display_candidate_signals(signals: list[dict]) -> None:
+    """
+    Muestra las señales de las empresas candidatas en terminal.
+
+    Args:
+        signals: Lista de diccionarios con el ticker, la señal y las razones.
+    """
+    console.print("\n[bold cyan]SEÑALES PARA EMPRESAS CANDIDATAS[/bold cyan]")
+    console.print("[dim]Basado en criterios de dividendos y fundamentales[/dim]\n")
+
+    if not signals:
+        console.print("[dim]  Sin señales de candidatas disponibles[/dim]\n")
+        return
+
+    table = Table(
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold white on dark_magenta",
+    )
+
+    table.add_column("Ticker", style="bold yellow", width=10)
+    table.add_column("Señal", width=12, justify="center")
+    table.add_column("Razones", style="white", min_width=50)
+
+    for candidate in signals:
+        ticker = candidate["ticker"]
+        signal = candidate["signal"]
+        reasons = "\\n".join(
+            candidate["reasons"]
+        )  # Unimos las razones con saltos de línea
+
+        signal_style = ""
+        if signal == "COMPRAR":
+            signal_style = "[bold green]"
+        elif signal == "ESPERAR":
+            signal_style = "[bold yellow]"
+        elif signal == "OBSERVAR":
+            signal_style = "[bold red]"
+
+        table.add_row(
+            ticker,
+            f"{signal_style}{signal}[/]",
+            reasons,
+        )
+
+    console.print(table)

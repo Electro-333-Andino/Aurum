@@ -1,7 +1,7 @@
 """
 Copyright 2026 Anderson Andino
 
-Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the Apache License, Version 20 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
@@ -13,13 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 # Módulo responsable de obtener datos avanzados desde Finnhub.
-# Incluye noticias con sentimiento, earnings y eventos de mercado
+# Incluye noticias con sentimiento, earnings y eventos de mercado.
+# También incluye el scanner para empresas candidatas.
 import os
+from datetime import datetime, timedelta
 
 import finnhub
 from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
+
+# Importar la lista de candidatas y la función de datos fundamentales
+from src.modules.prices import CANDIDATE_TICKERS, get_company_fundamentals
 
 # Cargamos las variables del .env
 load_dotenv()
@@ -34,8 +40,16 @@ if not api_key:
 
 client = finnhub.Client(api_key=api_key)
 
-# Traductor compartido
+# Traductor compartido para eficiencia
 translator = GoogleTranslator(source="en", target="es")
+
+# Sectores permitidos para empresas de dividendo, según CONTEXT.md
+ALLOWED_DIVIDEND_SECTORS = [
+    "Healthcare",
+    "Consumer Defensive",
+    "Energy",
+    "Financial Services",
+]
 
 
 def translate(text: str) -> str:
@@ -54,7 +68,8 @@ def translate(text: str) -> str:
     try:
         # Limitamos el texto a 500 caracteres para evitar timeouts
         return translator.translate(text[:500])
-    except Exception:
+    except Exception as e:
+        print(f"[ERROR] Error al traducir texto: {e}")
         return text
 
 
@@ -95,8 +110,6 @@ def get_company_news(ticker: str, max_news: int = 3) -> list[dict]:
         Lista de diccionarios con título, resumen, fuente y etiqueta de fecha.
     """
     try:
-        from datetime import datetime, timedelta
-
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -157,8 +170,6 @@ def get_upcoming_earnings(tickers: list[str]) -> list[dict]:
         Lista de próximos earnings ordenados por fecha.
     """
     try:
-        from datetime import datetime, timedelta
-
         today = datetime.now().strftime("%Y-%m-%d")
         in_30_days = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
 
@@ -189,3 +200,107 @@ def get_upcoming_earnings(tickers: list[str]) -> list[dict]:
     except Exception as e:
         print(f"[ERROR] No se pudo obtener calendario de earnings: {e}")
         return []
+
+
+def get_candidate_signals() -> list[dict]:
+    """
+    Escanea las empresas candidatas y genera una señal (COMPRAR/ESPERAR/OBSERVAR)
+    basada en los criterios del CONTEXT.md.
+
+    Returns:
+        Lista de diccionarios con el ticker, la señal y las razones.
+    """
+    signals = []
+    print("\n[INFO] Escaneando empresas candidatas para señales...")
+
+    for ticker in CANDIDATE_TICKERS:
+        signal = "OBSERVAR"
+        reasons = []
+        positive_criteria_count = 0
+
+        fundamentals = get_company_fundamentals(ticker)
+
+        if not fundamentals:
+            reasons.append("Datos fundamentales no disponibles.")
+            signals.append({"ticker": ticker, "signal": signal, "reasons": reasons})
+            continue
+
+        # Criterio 1: Dividendo > 2% anual
+        if (
+            fundamentals.get("dividend_yield") is not None
+            and fundamentals["dividend_yield"] > 2
+        ):
+            positive_criteria_count += 1
+            reasons.append(f"Dividendo ({fundamentals['dividend_yield']}%) > 2%.")
+        else:
+            reasons.append(
+                f"Dividendo ({fundamentals.get('dividend_yield', 'N/A')}%) <= 2% o no disponible."
+            )
+
+        # Criterio 2: Payout < 75%
+        if (
+            fundamentals.get("payout_ratio") is not None
+            and fundamentals["payout_ratio"] < 75
+        ):
+            positive_criteria_count += 1
+            reasons.append(f"Payout Ratio ({fundamentals['payout_ratio']}%) < 75%.")
+        else:
+            reasons.append(
+                f"Payout Ratio ({fundamentals.get('payout_ratio', 'N/A')}%) >= 75% o no disponible."
+            )
+
+        # Criterio 3: Flujo de caja positivo
+        if (
+            fundamentals.get("free_cash_flow") is not None
+            and fundamentals["free_cash_flow"] > 0
+        ):
+            positive_criteria_count += 1
+            reasons.append(
+                f"Flujo de Caja Libre ({fundamentals['free_cash_flow']:,}) positivo."
+            )
+        else:
+            reasons.append(
+                f"Flujo de Caja Libre ({fundamentals.get('free_cash_flow', 'N/A')}) no positivo o no disponible."
+            )
+
+        # Criterio 4: Deuda manejable
+        total_debt = fundamentals.get("total_debt")
+        fcf = fundamentals.get("free_cash_flow")
+        is_debt_manageable = False
+
+        if total_debt is None or total_debt == 0:
+            is_debt_manageable = True
+            reasons.append("Deuda total nula o no reportada (favorable).")
+        elif fcf is not None and fcf > 0 and total_debt < 5 * fcf:
+            is_debt_manageable = True
+            reasons.append(
+                f"Deuda Total ({total_debt:,}) manejable frente a FCF ({fcf:,})."
+            )
+        else:
+            reasons.append(
+                f"Deuda Total ({total_debt if total_debt is not None else 'N/A'}) potencialmente alta o FCF no positivo."
+            )
+
+        if is_debt_manageable:
+            positive_criteria_count += 1
+
+        # Criterio 5: Sector
+        if fundamentals.get("sector") in ALLOWED_DIVIDEND_SECTORS:
+            positive_criteria_count += 1
+            reasons.append(f"Sector ({fundamentals['sector']}) permitido.")
+        else:
+            reasons.append(
+                f"Sector ({fundamentals.get('sector', 'N/A')}) no está en la lista de sectores permitidos."
+            )
+
+        # Asignación de la señal
+        if positive_criteria_count >= 4:
+            signal = "COMPRAR"
+        elif positive_criteria_count >= 2:
+            signal = "ESPERAR"
+        else:
+            signal = "OBSERVAR"
+
+        signals.append({"ticker": ticker, "signal": signal, "reasons": reasons})
+
+    return signals

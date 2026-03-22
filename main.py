@@ -16,15 +16,16 @@ limitations under the License.
 # Punto de entrada principal del programa.
 # Coordina los módulos sin contener lógica de negocio.
 
-from src.modules.prices import get_portfolio_prices, PORTFOLIO
 from src.modules.news import get_macro_news
-from src.modules.scanner import get_full_portfolio_analysis
+from src.modules.prices import PORTFOLIO, get_portfolio_prices
 from src.modules.report import (
-    display_portfolio,
-    display_macro_news,
+    display_candidate_signals,  # <- Descomentado
     display_finnhub_news,
+    display_macro_news,
+    display_portfolio,
     display_upcoming_earnings,
 )
+from src.modules.scanner import get_candidate_signals, get_full_portfolio_analysis
 
 
 def main():
@@ -45,6 +46,11 @@ def main():
     analysis = get_full_portfolio_analysis(PORTFOLIO)
     display_finnhub_news(analysis, portfolio_data)
     display_upcoming_earnings(analysis["upcoming_earnings"])
+
+    # --- SEÑALES DE CANDIDATAS ---
+    print("Generando señales para empresas candidatas...")
+    candidate_signals = get_candidate_signals()
+    display_candidate_signals(candidate_signals)  # <- Descomentado
 
 
 if __name__ == "__main__":

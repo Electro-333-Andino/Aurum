@@ -21,18 +21,25 @@ import yfinance as yf
 # Lista de tickers Empresas actuales
 
 PORTFOLIO = [
-    "NVDA",  # Nvidia
-    "GOOGL",  # Google
-    "COST",  # Costco
-    "AMZN",  # Amazon
-    "MSFT",  # Microsoft
-    "META",  # Meta
-    "V",  # Visa
-    "VLO",  # Valero Energy
-    "BG",  # Bunge Global
+    "NVDA",  # Nvidia (Crecimiento)
+    "GOOGL",  # Google (Crecimiento)
+    "MSFT",  # Microsoft (Crecimiento)
+    "AMZN",  # Amazon (Crecimiento)
+    "META",  # Meta (Crecimiento)
+    "COST",  # Costco (Crecimiento)
+    "V",  # Visa (Crecimiento)
+    "VLO",  # Valero Energy (Dividendos)
+    "CSPX.L",  # iShares Core S&P 500 UCITS ETF (ETF)
+]
+
+# Lista de tickers Empresas candidatas para el scanner
+CANDIDATE_TICKERS = [
     "O",  # Realty Income
     "JNJ",  # Johnson & Johnson
-    "BIP",  # Brookfield Infraestructure Corp
+    "BG",  # Bunge Global
+    "ABBV",  # AbbVie
+    "PEP",  # PepsiCo
+    "MDT",  # Medtronic
 ]
 
 
@@ -94,3 +101,44 @@ def get_portfolio_prices() -> list[dict]:
             results.append(data)
 
     return results
+
+
+def get_company_fundamentals(ticker: str) -> dict | None:
+    """
+    Obtiene datos fundamentales de una empresa desde Yahoo Finance.
+
+    Args:
+        ticker: Símbolo de la acción. Ejemplo: 'ABBV'
+
+    Returns:
+        Diccionario con dividend_yield, payout_ratio, free_cash_flow, total_debt, sector.
+        Retorna None si ocurre un error o si los datos no están disponibles.
+    """
+    try:
+        company = yf.Ticker(ticker)
+        info = company.info
+
+        # Los valores por defecto son None o 0 para facilitar el chequeo
+        dividend_yield = info.get("dividendYield")
+        payout_ratio = info.get("payoutRatio")
+        free_cash_flow = info.get("freeCashflow")
+        total_debt = info.get("totalDebt")
+        sector = info.get("sector")
+        current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
+
+        return {
+            "ticker": ticker,
+            "dividend_yield": round(dividend_yield * 100, 2)
+            if dividend_yield is not None
+            else None,
+            "payout_ratio": round(payout_ratio * 100, 2)
+            if payout_ratio is not None
+            else None,
+            "free_cash_flow": free_cash_flow,
+            "total_debt": total_debt,
+            "sector": sector,
+            "current_price": current_price,  # Necesario para evaluar la deuda contra el precio/capitalización
+        }
+    except Exception as e:
+        print(f"[ERROR] No se pudieron obtener datos fundamentales de {ticker}: {e}")
+        return None
