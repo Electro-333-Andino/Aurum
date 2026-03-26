@@ -38,7 +38,7 @@ CANDIDATE_TICKERS = [
     "JNJ",  # Johnson & Johnson
     "BG",  # Bunge Global
     "ABBV",  # AbbVie
-    "PEP",  # PepsiCo
+    "KO",  # Coca-Cola
     "MDT",  # Medtronic
 ]
 

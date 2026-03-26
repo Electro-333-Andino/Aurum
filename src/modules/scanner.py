@@ -43,6 +43,11 @@ client = finnhub.Client(api_key=api_key)
 # Traductor compartido para eficiencia
 translator = GoogleTranslator(source="en", target="es")
 
+# --- MAPEO DE ETFs NO SOPORTADOS POR FINNHUB ---
+ETF_EQUIVALENTS = {
+    "CSPX.L": "SPY",
+}
+
 # Sectores permitidos para empresas de dividendo, según CONTEXT.md
 ALLOWED_DIVIDEND_SECTORS = [
     "Healthcare",
@@ -99,8 +104,7 @@ def get_full_portfolio_analysis(tickers: list[str]) -> dict:
 def get_company_news(ticker: str, max_news: int = 3) -> list[dict]:
     """
     Obtiene noticias recientes de una empresa desde Finnhub.
-    Si no hay noticias del día actual, muestra las del día anterior.
-    Incluye resumen traducido al español.
+    Usa equivalencias para ETFs no soportados (ej: CSPX.L → SPY).
 
     Args:
         ticker: Símbolo de la acción. Ejemplo: 'NVDA'
@@ -110,22 +114,24 @@ def get_company_news(ticker: str, max_news: int = 3) -> list[dict]:
         Lista de diccionarios con título, resumen, fuente y etiqueta de fecha.
     """
     try:
+        api_ticker = ETF_EQUIVALENTS.get(ticker, ticker)  # Usamos equivalente si existe
+
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
         # Primero intentamos obtener noticias de hoy
-        news = client.company_news(ticker, _from=today, to=today)
+        news = client.company_news(api_ticker, _from=today, to=today)
         date_label = "Hoy"
 
         # Si no hay noticias de hoy usamos las de ayer
         if not news:
-            news = client.company_news(ticker, _from=yesterday, to=yesterday)
+            news = client.company_news(api_ticker, _from=yesterday, to=yesterday)
             date_label = "Ayer"
 
         # Si tampoco hay de ayer buscamos últimos 3 días
         if not news:
             three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
-            news = client.company_news(ticker, _from=three_days_ago, to=today)
+            news = client.company_news(api_ticker, _from=three_days_ago, to=today)
             date_label = "Últimos 3 días"
 
         news_list = []

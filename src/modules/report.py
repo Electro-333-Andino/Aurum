@@ -200,7 +200,7 @@ def display_candidate_signals(signals: list[dict]) -> None:
     for candidate in signals:
         ticker = candidate["ticker"]
         signal = candidate["signal"]
-        reasons = "\\n".join(
+        reasons = "\n".join(
             candidate["reasons"]
         )  # Unimos las razones con saltos de línea
 
