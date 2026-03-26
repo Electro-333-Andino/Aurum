@@ -43,7 +43,7 @@ CANDIDATE_TICKERS = [
 ]
 
 
-def get_stop_price(ticker: str) -> dict | None:
+def get_stock_price(ticker: str) -> dict:
     """
     Obtiene el precio actual y variación diaria de una acción.
 
@@ -56,18 +56,39 @@ def get_stop_price(ticker: str) -> dict | None:
     """
     try:
         # Descargamos la informacion del ticker desde Yahoo Finance
-        stop = yf.Ticker(ticker)
-        info = stop.info
+        stock = yf.Ticker(ticker)
+        history = stock.history(period="2d")
+
+        if history.empty:
+            print(f"[WARNING] No se encontraron datos históricos para {ticker}")
+            return {
+                "ticke": ticker,
+                "valid": False,
+            }
 
         # Extraemos los datos que necesitamos
         # .get() es seguro: si el dato ne existe retorna el valor por defecto
 
-        current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
-        previous_close = info.get("previousClose", 0)
-        company_name = info.get("shortName", ticker)
+        current_price = history["Close"].iloc[-1]  # Precio de cierre más reciente
+
+        if len(history) > 1:
+            previous_close = history["Close"].iloc[
+                -2
+            ]  # Precio de cierre del día anterior
+        else:
+            previous_close = current_price  # Si no hay datos anteriores, usamos el precio actual para evitar errores
+
+        try:
+            info = stock.info
+        except Exception:
+            info = {}
+
+        company_name = info.get(
+            "shortName", ticker
+        )  # Nombre de la empresa o el ticker si no se encuentra
 
         # Calculamos el cambio porcentual
-        if previous_close and previous_close != 0:
+        if previous_close != 0:
             change_percent = ((current_price - previous_close) / previous_close) * 100
 
         # si no -> ponemos 0% para no romper el programa
@@ -80,11 +101,15 @@ def get_stop_price(ticker: str) -> dict | None:
             "price": round(current_price, 2),
             "change_percent": round(change_percent, 2),
             "previous_close": round(previous_close, 2),
+            "valid": True,
         }
 
     except Exception as e:
         print(f"[ERROR] No se pudo obtener precio de {ticker}: {e}")
-        return None
+        return {
+            "ticker": ticker,
+            "valid": False,
+        }
 
 
 def get_portfolio_prices() -> list[dict]:
@@ -96,8 +121,8 @@ def get_portfolio_prices() -> list[dict]:
     """
     results = []
     for ticker in PORTFOLIO:
-        data = get_stop_price(ticker)
-        if data:  # Solo agregamos si la consulta fue exitosa
+        data = get_stock_price(ticker)
+        if data.get("valid"):  # Solo agregamos si la consulta fue exitosa
             results.append(data)
 
     return results
@@ -115,34 +140,43 @@ def get_company_fundamentals(ticker: str) -> dict | None:
         Retorna None si ocurre un error o si los datos no están disponibles.
     """
     try:
-        company = yf.Ticker(ticker)
-        info = company.info
+        stock = yf.Ticker(ticker)
 
-        # Los valores por defecto son None o 0 para facilitar el chequeo
+        try:
+            info = stock.info
+        except Exception:
+            print(f"=[WARNING] info vacia para {ticker}")
+            return None
+
+        if not info:
+            print(f"=[WARNING] info vacia para {ticker}")
+            return None
+
         dividend_yield = info.get("dividendYield")
         payout_ratio = info.get("payoutRatio")
         free_cash_flow = info.get("freeCashflow")
         total_debt = info.get("totalDebt")
         sector = info.get("sector")
-        current_price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
+
+        current_price = info.get("currentPrice") or info.get("regularMarketPrice")
+
+        if current_price is None:
+            current_price = 0.0
 
         return {
             "ticker": ticker,
-            "dividend_yield": round(
-                dividend_yield, 4
-            )  # Ahora como decimal (ej. 0.02 para 2%)
+            "dividend_yield": round(dividend_yield * 100, 2)
             if dividend_yield is not None
             else None,
-            "payout_ratio": round(
-                payout_ratio, 4
-            )  # Ahora como decimal (ej. 0.45 para 45%)
+            "payout_ratio": round(payout_ratio * 100, 2)
             if payout_ratio is not None
             else None,
             "free_cash_flow": free_cash_flow,
             "total_debt": total_debt,
             "sector": sector,
-            "current_price": current_price,  # Necesario para evaluar la deuda contra el precio/capitalización
+            "current_price": current_price,
         }
+
     except Exception as e:
         print(f"[ERROR] No se pudieron obtener datos fundamentales de {ticker}: {e}")
         return None
