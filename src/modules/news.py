@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-20.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@ limitations under the License.
 
 # Módulo responsable ÚNICAMENTE de noticias macroeconómicas desde Reuters.
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import feedparser
 from deep_translator import GoogleTranslator
@@ -24,12 +24,9 @@ from deep_translator import GoogleTranslator
 # --- INSTANCIA COMPARTIDA DEL TRADUCTOR ---
 translator = GoogleTranslator(source="en", target="es")
 
-# --- FUENTES RSS MACRO DE REUTERS ---
-MACRO_FEEDS = {
-    "CNBC": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-    "MarketWatch": "https://feeds.content.dowjones.io/public/rss/mw_marketpulse",
-    "Investing.com": "https://www.investing.com/rss/news.rss",
-}
+# --- FUENTES RSS MACRO DE CNBC (según CONTEXT.md) ---
+# Se utiliza solo CNBC para noticias macro, ya que Reuters cambió sus URLs.
+MACRO_FEED_URL = "https://www.cnbc.com/id/100003114/device/rss/rss.html"
 
 # --- PALABRAS CLAVE MACRO ---
 # Solo mostramos noticias que impactan decisiones de inversión
@@ -77,45 +74,69 @@ def translate(text: str | None) -> str:
         return ""
 
     try:
-        return translator.translate(text)
-    except Exception:
+        # Limitar el texto a 500 caracteres para evitar timeouts con deep-translator
+        return translator.translate(text[:500])
+    except Exception as e:
+        print(f"[ERROR] Error al traducir texto: {e}")
         return text
 
 
-def parse_published_date(entry) -> str:
+def get_last_business_day(start_date: datetime, days_back: int) -> datetime:
     """
-    Convierte la fecha de publicación a formato legible.
+    Calcula la fecha del último día hábil (lunes a viernes) hasta 'days_back' días.
+    """
+    current_date = start_date
+    business_days_found = 0
+    while business_days_found < days_back:
+        current_date -= timedelta(days=1)
+        # 0 = Lunes, 5 = Sábado, 6 = Domingo
+        if current_date.weekday() < 5:  # Si no es sábado (5) ni domingo (6)
+            business_days_found += 1
+    return current_date
+
+
+def parse_published_date(entry, now_ecuador: datetime) -> tuple[str, datetime]:
+    """
+    Convierte la fecha de publicación a formato legible y devuelve el objeto datetime.
     Usa UTC-5 (hora Ecuador) para el cálculo correcto.
 
     Args:
         entry: Entrada del feed RSS.
+        now_ecuador: Objeto datetime del momento actual en zona horaria de Ecuador.
 
     Returns:
-        String con tiempo relativo. Ejemplo: 'hace 2 horas'
+        Tupla de (String con tiempo relativo. Ejemplo: 'hace 2 horas', objeto datetime de la publicación).
     """
     try:
-        # Convertimos la fecha del feed a timestamp
-        published_timestamp = time.mktime(entry.published_parsed)
-        # Obtenemos el tiempo actual en UTC-5 (Ecuador)
+        # Convertimos la fecha del feed a datetime object en UTC
+        published_utc = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+        # Convertimos a la zona horaria de Ecuador
         ecuador_tz = timezone(timedelta(hours=-5))
-        now_timestamp = datetime.now(tz=ecuador_tz).timestamp()
-        seconds = now_timestamp - published_timestamp
+        published_ecuador = published_utc.astimezone(ecuador_tz)
 
-        if seconds <= 0:
-            seconds = abs(seconds)
+        delta = now_ecuador - published_ecuador
 
-        if seconds < 3600:
-            minutes = int(seconds / 60)
-            return f"hace {minutes} minuto{'s' if minutes != 1 else ''}"
-        elif seconds < 86400:
-            hours = int(seconds / 3600)
-            return f"hace {hours} hora{'s' if hours != 1 else ''}"
+        if delta.total_seconds() < 0:
+            delta = timedelta(
+                seconds=0
+            )  # Evita "hace -X días" si la noticia es futura por error
+
+        if delta.total_seconds() < 3600:  # Menos de una hora
+            minutes = int(delta.total_seconds() / 60)
+            return (
+                f"hace {minutes} minuto{'s' if minutes != 1 else ''}",
+                published_ecuador,
+            )
+        elif delta.total_seconds() < 86400:  # Menos de un día
+            hours = int(delta.total_seconds() / 3600)
+            return f"hace {hours} hora{'s' if hours != 1 else ''}", published_ecuador
         else:
-            days = int(seconds / 86400)
-            return f"hace {days} día{'s' if days != 1 else ''}"
+            days = int(delta.total_seconds() / 86400)
+            return f"hace {days} día{'s' if days != 1 else ''}", published_ecuador
 
-    except Exception:
-        return "fecha desconocida"
+    except Exception as e:
+        print(f"[ERROR] Error al parsear fecha: {e}")
+        return "fecha desconocida", datetime.min.replace(tzinfo=timezone.utc)
 
 
 def is_macro_relevant(title: str | None) -> bool:
@@ -136,46 +157,68 @@ def is_macro_relevant(title: str | None) -> bool:
     return any(keyword in title_lower for keyword in MACRO_KEYWORDS)
 
 
-def get_macro_news(max_news: int = 8) -> list[dict]:
+def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[dict]:
     """
-    Obtiene las noticias macroeconómicas más relevantes del día desde Reuters.
+    Obtiene las noticias macroeconómicas más relevantes desde CNBC.
+    Filtra noticias por palabras clave y un número máximo de días hábiles hacia atrás.
 
     Args:
         max_news: Cantidad máxima de noticias macro a retornar.
+        max_business_days_back: Número máximo de días hábiles hacia atrás para buscar noticias.
 
     Returns:
         Lista de diccionarios con noticias macro traducidas.
     """
     macro_news = []
+    processed_titles = set()
 
-    for source_name, url in MACRO_FEEDS.items():
-        try:
-            feed = feedparser.parse(url)
+    try:
+        feed = feedparser.parse(MACRO_FEED_URL)
+        ecuador_tz = timezone(timedelta(hours=-5))
+        now_ecuador = datetime.now(tz=ecuador_tz)
 
-            for entry in feed.entries:
-                # Si ya tenemos suficientes noticias salimos del loop
-                if len(macro_news) >= max_news:
-                    break
+        # Calculamos la fecha límite para las noticias (retrocediendo solo días hábiles)
+        # Considera que `get_last_business_day` ya tiene la lógica para saltar fines de semana
+        earliest_allowed_date = get_last_business_day(
+            now_ecuador, max_business_days_back
+        ).replace(hour=0, minute=0, second=0, microsecond=0)
 
-                title = str(entry.title) if entry.title else ""
+        for entry in feed.entries:
+            # Si ya tenemos suficientes noticias, salimos del loop
+            if len(macro_news) >= max_news:
+                break
 
-                if not is_macro_relevant(title):
-                    continue
+            title = str(entry.title) if entry.title else ""
 
-                existing = [n["original_title"] for n in macro_news]
-                if entry.title in existing:
-                    continue
+            # Parseamos la fecha de publicación y la convertimos a la zona horaria de Ecuador
+            relative_published_time, published_datetime = parse_published_date(
+                entry, now_ecuador
+            )
 
-                macro_news.append(
-                    {
-                        "title": translate(title),
-                        "original_title": title,
-                        "published": parse_published_date(entry),
-                        "source": "CNBC",
-                    }
-                )
+            # Filtro por fecha: solo noticias dentro del rango de días hábiles permitidos
+            # y que no hayan sido publicadas en un fin de semana (sábado=5, domingo=6)
+            if (
+                published_datetime < earliest_allowed_date
+                or published_datetime.weekday() >= 5
+            ):
+                continue
 
-        except Exception as e:
-            print(f"[ERROR] Feed macro {source_name}: {e}")
+            # Filtro por relevancia y duplicados
+            if not is_macro_relevant(title) or title in processed_titles:
+                continue
+
+            # Agregamos la noticia
+            macro_news.append(
+                {
+                    "title": translate(title),
+                    "original_title": title,
+                    "published": relative_published_time,  # Usamos el tiempo relativo aquí
+                    "source": "CNBC",
+                }
+            )
+            processed_titles.add(title)
+
+    except Exception as e:
+        print(f"[ERROR] No se pudieron obtener noticias macro de CNBC: {e}")
 
     return macro_news

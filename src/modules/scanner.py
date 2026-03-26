@@ -226,27 +226,29 @@ def get_candidate_signals() -> list[dict]:
             continue
 
         # Criterio 1: Dividendo > 2% anual
-        if (
-            fundamentals.get("dividend_yield") is not None
-            and fundamentals["dividend_yield"] > 2
-        ):
+        dividend_yield = fundamentals.get("dividend_yield")
+        dividend_yield_percent = (
+            round(dividend_yield * 100, 2) if dividend_yield is not None else None
+        )
+        if dividend_yield_percent is not None and dividend_yield_percent > 2.0:
             positive_criteria_count += 1
-            reasons.append(f"Dividendo ({fundamentals['dividend_yield']}%) > 2%.")
+            reasons.append(f"Dividendo ({dividend_yield_percent}%) > 2% anual.")
         else:
             reasons.append(
-                f"Dividendo ({fundamentals.get('dividend_yield', 'N/A')}%) <= 2% o no disponible."
+                f"Dividendo ({dividend_yield_percent if dividend_yield_percent is not None else 'N/A'}%) <= 2% anual o no disponible."
             )
 
         # Criterio 2: Payout < 75%
-        if (
-            fundamentals.get("payout_ratio") is not None
-            and fundamentals["payout_ratio"] < 75
-        ):
+        payout_ratio = fundamentals.get("payout_ratio")
+        payout_ratio_percent = (
+            round(payout_ratio * 100, 2) if payout_ratio is not None else None
+        )
+        if payout_ratio_percent is not None and payout_ratio_percent < 75.0:
             positive_criteria_count += 1
-            reasons.append(f"Payout Ratio ({fundamentals['payout_ratio']}%) < 75%.")
+            reasons.append(f"Payout Ratio ({payout_ratio_percent}%) < 75%.")
         else:
             reasons.append(
-                f"Payout Ratio ({fundamentals.get('payout_ratio', 'N/A')}%) >= 75% o no disponible."
+                f"Payout Ratio ({payout_ratio_percent if payout_ratio_percent is not None else 'N/A'}%) >= 75% o no disponible."
             )
 
         # Criterio 3: Flujo de caja positivo
@@ -263,23 +265,31 @@ def get_candidate_signals() -> list[dict]:
                 f"Flujo de Caja Libre ({fundamentals.get('free_cash_flow', 'N/A')}) no positivo o no disponible."
             )
 
-        # Criterio 4: Deuda manejable
+        # Criterio 4: Deuda manejable (ratio Deuda Total / Flujo de Caja Libre < 5)
         total_debt = fundamentals.get("total_debt")
         fcf = fundamentals.get("free_cash_flow")
         is_debt_manageable = False
 
         if total_debt is None or total_debt == 0:
             is_debt_manageable = True
-            reasons.append("Deuda total nula o no reportada (favorable).")
-        elif fcf is not None and fcf > 0 and total_debt < 5 * fcf:
-            is_debt_manageable = True
-            reasons.append(
-                f"Deuda Total ({total_debt:,}) manejable frente a FCF ({fcf:,})."
-            )
-        else:
-            reasons.append(
-                f"Deuda Total ({total_debt if total_debt is not None else 'N/A'}) potencialmente alta o FCF no positivo."
-            )
+            reasons.append("Deuda total nula o cero (favorable).")
+        elif fcf is not None and fcf > 0:  # Si hay FCF positivo, evaluamos el ratio
+            if total_debt / fcf < 5:  # Umbral de 5 veces el FCF
+                is_debt_manageable = True
+                reasons.append(
+                    f"Deuda Total ({total_debt:,}) es manejable frente a FCF ({fcf:,}) (ratio < 5)."
+                )
+            else:
+                reasons.append(
+                    f"Deuda Total ({total_debt:,}) es alta comparado con FCF ({fcf:,}) (ratio >= 5)."
+                )
+        else:  # Si FCF no es positivo o no está disponible, y hay deuda, no es manejable
+            if total_debt is not None and total_debt > 0:
+                reasons.append(
+                    f"Flujo de Caja Libre ({fcf if fcf is not None else 'N/A'}) no es positivo o no disponible, y hay deuda ({total_debt:,})."
+                )
+            else:  # Este caso es si no hay FCF pero tampoco hay deuda, ya cubierto arriba.
+                reasons.append("Evaluación de deuda no concluyente por falta de datos.")
 
         if is_debt_manageable:
             positive_criteria_count += 1
