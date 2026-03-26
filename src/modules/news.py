@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 # Módulo responsable ÚNICAMENTE de noticias macroeconómicas desde Reuters.
-import time
 from datetime import datetime, timedelta, timezone
 
 import feedparser
@@ -57,6 +56,8 @@ MACRO_KEYWORDS = [
     "trade",
 ]
 
+_translation_cache = {}
+
 
 def translate(text: str | None) -> str:
     """
@@ -69,13 +70,18 @@ def translate(text: str | None) -> str:
     Returns:
         Texto traducido al español.
     """
+
     # Si no es un string válido retornamos string vacío
     if not isinstance(text, str) or not text.strip():
         return ""
 
+    if text in _translation_cache:
+        return _translation_cache[text]
+
     try:
-        # Limitar el texto a 500 caracteres para evitar timeouts con deep-translator
-        return translator.translate(text[:500])
+        translated = translator.translate(text[:500])
+        _translation_cache[text] = translated
+        return translated
     except Exception as e:
         print(f"[ERROR] Error al traducir texto: {e}")
         return text
@@ -174,6 +180,11 @@ def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[d
 
     try:
         feed = feedparser.parse(MACRO_FEED_URL)
+
+        if not feed.entries:
+            print("[WARNING] Feed vacio de CNBC.")
+            return []
+
         ecuador_tz = timezone(timedelta(hours=-5))
         now_ecuador = datetime.now(tz=ecuador_tz)
 
@@ -188,7 +199,7 @@ def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[d
             if len(macro_news) >= max_news:
                 break
 
-            title = str(entry.title) if entry.title else ""
+            title = getattr(entry, "title", "") or ""
 
             # Parseamos la fecha de publicación y la convertimos a la zona horaria de Ecuador
             relative_published_time, published_datetime = parse_published_date(
