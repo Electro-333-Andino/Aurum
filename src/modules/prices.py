@@ -165,12 +165,8 @@ def get_company_fundamentals(ticker: str) -> dict | None:
 
         return {
             "ticker": ticker,
-            "dividend_yield": round(dividend_yield * 100, 2)
-            if dividend_yield is not None
-            else None,
-            "payout_ratio": round(payout_ratio * 100, 2)
-            if payout_ratio is not None
-            else None,
+            "dividend_yield": dividend_yield,
+            "payout_ratio": payout_ratio,
             "free_cash_flow": free_cash_flow,
             "total_debt": total_debt,
             "sector": sector,

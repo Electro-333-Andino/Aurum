@@ -181,28 +181,41 @@ def display_candidate_signals(signals: list[dict]) -> None:
         signals: Lista de diccionarios con el ticker, la señal y las razones.
     """
     console.print("\n[bold cyan]SEÑALES PARA EMPRESAS CANDIDATAS[/bold cyan]")
-    console.print("[dim]Basado en criterios de dividendos y fundamentales[/dim]\n")
 
     if not signals:
         console.print("[dim]  Sin señales de candidatas disponibles[/dim]\n")
         return
 
     table = Table(
-        box=box.ROUNDED,
+        box=box.SIMPLE_HEAVY,
         show_header=True,
         header_style="bold white on dark_magenta",
+        row_styles=["", "dim"],
+        padding=(0, 1),
     )
 
-    table.add_column("Ticker", style="bold yellow", width=10)
-    table.add_column("Señal", width=12, justify="center")
-    table.add_column("Razones", style="white", min_width=50)
+    table.add_column("Ticker", style="bold yellow", width=8)
+    table.add_column("Señal", width=10, justify="center")
+    table.add_column("Razones", ratio=1)
+
+    def format_reasons(reasons_list: list[str]) -> str:
+        formatted = []
+
+        for r in reasons_list:
+            # Clasificación simple por contenido
+            if any(x in r for x in [">", "positivo", "permitido", "manejable"]):
+                formatted.append(f"[green]• {r}[/green]")
+            elif any(x in r for x in ["no", "<=", "alta", ">= 75"]):
+                formatted.append(f"[red]• {r}[/red]")
+            else:
+                formatted.append(f"[yellow]• {r}[/yellow]")
+
+        return "\n".join(formatted)
 
     for candidate in signals:
         ticker = candidate["ticker"]
         signal = candidate["signal"]
-        reasons = "\n".join(
-            candidate["reasons"]
-        )  # Unimos las razones con saltos de línea
+        reasons = format_reasons(candidate["reasons"])
 
         signal_style = ""
         if signal == "COMPRAR":
@@ -210,7 +223,7 @@ def display_candidate_signals(signals: list[dict]) -> None:
         elif signal == "ESPERAR":
             signal_style = "[bold yellow]"
         elif signal == "OBSERVAR":
-            signal_style = "[bold red]"
+            signal_style = "[bold mangenta]"
 
         table.add_row(
             ticker,

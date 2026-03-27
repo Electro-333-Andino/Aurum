@@ -79,7 +79,7 @@ def translate(text: str | None) -> str:
         return _translation_cache[text]
 
     try:
-        translated = translator.translate(text[:500])
+        translated = translator.translate(text[:1000])
         _translation_cache[text] = translated
         return translated
     except Exception as e:

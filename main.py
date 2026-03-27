@@ -48,7 +48,6 @@ def main():
     display_upcoming_earnings(analysis["upcoming_earnings"])
 
     # --- SEÑALES DE CANDIDATAS ---
-    print("Generando señales para empresas candidatas...")
     candidate_signals = get_candidate_signals()
     display_candidate_signals(candidate_signals)  # <- Descomentado
 
