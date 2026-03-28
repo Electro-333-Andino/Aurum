@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-20.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,9 @@ limitations under the License.
 from datetime import datetime, timedelta, timezone
 
 import feedparser
-from deep_translator import GoogleTranslator
 
-# --- INSTANCIA COMPARTIDA DEL TRADUCTOR ---
-translator = GoogleTranslator(source="en", target="es")
+# Ruta de importación para TranslatorService
+from src.utils.translator import translator_service
 
 # --- FUENTES RSS MACRO DE CNBC (según CONTEXT.md) ---
 # Se utiliza solo CNBC para noticias macro, ya que Reuters cambió sus URLs.
@@ -56,36 +55,6 @@ MACRO_KEYWORDS = [
     "trade",
 ]
 
-_translation_cache = {}
-
-
-def translate(text: str | None) -> str:
-    """
-    Traduce texto del inglés al español.
-    Si falla o el texto no es válido retorna el texto original.
-
-    Args:
-        text: Texto en inglés. Puede ser None.
-
-    Returns:
-        Texto traducido al español.
-    """
-
-    # Si no es un string válido retornamos string vacío
-    if not isinstance(text, str) or not text.strip():
-        return ""
-
-    if text in _translation_cache:
-        return _translation_cache[text]
-
-    try:
-        translated = translator.translate(text[:1000])
-        _translation_cache[text] = translated
-        return translated
-    except Exception as e:
-        print(f"[ERROR] Error al traducir texto: {e}")
-        return text
-
 
 def get_last_business_day(start_date: datetime, days_back: int) -> datetime:
     """
@@ -115,7 +84,11 @@ def parse_published_date(entry, now_ecuador: datetime) -> tuple[str, datetime]:
     """
     try:
         # Convertimos la fecha del feed a datetime object en UTC
+        if not hasattr(entry, "published_parsed") or not entry.published_parsed:
+            return "Fecha desconocida", datetime.min.replace(tzinfo=timezone.utc)
+
         published_utc = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+
         # Convertimos a la zona horaria de Ecuador
         ecuador_tz = timezone(timedelta(hours=-5))
         published_ecuador = published_utc.astimezone(ecuador_tz)
@@ -156,7 +129,7 @@ def is_macro_relevant(title: str | None) -> bool:
         True si contiene al menos una palabra clave macro.
     """
     # Si el título no es un string válido descartamos la noticia
-    if not isinstance(title, str):
+    if not isinstance(title, str) or not title.strip():
         return False
 
     title_lower = title.lower()
@@ -201,6 +174,8 @@ def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[d
 
             title = getattr(entry, "title", "") or ""
 
+            normalized_title = title.strip().lower()
+
             # Parseamos la fecha de publicación y la convertimos a la zona horaria de Ecuador
             relative_published_time, published_datetime = parse_published_date(
                 entry, now_ecuador
@@ -215,19 +190,19 @@ def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[d
                 continue
 
             # Filtro por relevancia y duplicados
-            if not is_macro_relevant(title) or title in processed_titles:
+            if not is_macro_relevant(title) or normalized_title in processed_titles:
                 continue
 
             # Agregamos la noticia
             macro_news.append(
                 {
-                    "title": translate(title),
+                    "title": translator_service.translate(title),
                     "original_title": title,
                     "published": relative_published_time,  # Usamos el tiempo relativo aquí
-                    "source": "CNBC",
+                    "source": getattr(entry, "source", {}).get("title", "CNBC"),
                 }
             )
-            processed_titles.add(title)
+            processed_titles.add(normalized_title)
 
     except Exception as e:
         print(f"[ERROR] No se pudieron obtener noticias macro de CNBC: {e}")
