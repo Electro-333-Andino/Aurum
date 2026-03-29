@@ -15,21 +15,48 @@ limitations under the License.
 """
 
 # fundamentals.py
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import yfinance as yf
 
-from src.utils.calculations import debt_to_fcf_ratio, normalize_percentage, to_float
+from src.utils.calculations import (
+    debt_to_fcf_ratio,
+    normalize_percentage,
+    to_float,
+)
+
+# ---------------- VALIDADORES INTERNOS ----------------
+
+
+def _is_valid_dividend(dividend_yield: Optional[float]) -> bool:
+    return dividend_yield is not None and 0 < dividend_yield <= 0.10
+
+
+def _is_valid_payout(payout_ratio: Optional[float]) -> bool:
+    return payout_ratio is not None and payout_ratio <= 1
+
+
+def _is_valid_fcf(free_cash_flow: Optional[float]) -> bool:
+    return free_cash_flow is not None and free_cash_flow > 0
+
+
+def _is_valid_debt_ratio(debt_to_fcf: Optional[float]) -> bool:
+    return debt_to_fcf is not None and debt_to_fcf < 5
+
+
+# ---------------- HELPERS ----------------
 
 
 def _safe_get(info: dict, key: str) -> Optional[float]:
-    """Obtiene un valor numérico limpio desde yfinance"""
     return to_float(info.get(key))
+
+
+# ---------------- MAIN ----------------
 
 
 def get_clean_fundamentals(ticker: str) -> Optional[Dict]:
     """
-    Obtiene y limpia datos fundamentales de una empresa.
+    Obtiene, limpia y valida datos fundamentales de una empresa
     """
 
     try:
@@ -39,43 +66,35 @@ def get_clean_fundamentals(ticker: str) -> Optional[Dict]:
         if not info:
             return None
 
-        # ---------------- RAW ----------------
+        # -------- RAW --------
         dividend_yield = _safe_get(info, "dividendYield")
         payout_ratio = _safe_get(info, "payoutRatio")
         free_cash_flow = _safe_get(info, "freeCashflow")
         total_debt = _safe_get(info, "totalDebt")
         market_cap = _safe_get(info, "marketCap")
 
-        # ---------------- NORMALIZACIÓN ----------------
+        # -------- NORMALIZACIÓN --------
         dividend_yield = normalize_percentage(dividend_yield)
         payout_ratio = normalize_percentage(payout_ratio)
 
-        # ---------------- VALIDACIONES ----------------
+        # -------- VALIDACIÓN BASE --------
 
-        # Dividend yield válido
-        if dividend_yield is None or dividend_yield <= 0:
+        if not _is_valid_dividend(dividend_yield):
             return None
 
-        # Evitar yields absurdos (trampas)
-        if dividend_yield > 0.10:
+        if not _is_valid_payout(payout_ratio):
             return None
 
-        # Payout ratio válido
-        if payout_ratio is None or payout_ratio > 1:
+        if not _is_valid_fcf(free_cash_flow):
             return None
 
-        # Free cash flow debe ser positivo
-        if free_cash_flow is None or free_cash_flow <= 0:
-            return None
-
-        # ---------------- MÉTRICAS DERIVADAS ----------------
+        # -------- MÉTRICAS DERIVADAS --------
         debt_fcf = debt_to_fcf_ratio(total_debt, free_cash_flow)
 
-        # Si no podemos calcular deuda → descartamos
-        if debt_fcf is None:
+        if not _is_valid_debt_ratio(debt_fcf):
             return None
 
-        # ---------------- OUTPUT LIMPIO ----------------
+        # -------- OUTPUT FINAL --------
         return {
             "ticker": ticker,
             "dividend_yield": dividend_yield,
