@@ -14,165 +14,175 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Modulos responsables de obtener precios reales desde Yahoo Finance
+# prices.py
+# Modulo responsables de obtener precios reales desde Yahoo Finance
+from typing import Dict, Optional, cast
 
+import pandas as pd
 import yfinance as yf
 
-# Lista de tickers Empresas actuales
+from src.utils.calculations import to_float
 
-PORTFOLIO = [
-    "NVDA",  # Nvidia (Crecimiento)
-    "GOOGL",  # Google (Crecimiento)
-    "MSFT",  # Microsoft (Crecimiento)
-    "AMZN",  # Amazon (Crecimiento)
-    "META",  # Meta (Crecimiento)
-    "COST",  # Costco (Crecimiento)
-    "V",  # Visa (Crecimiento)
-    "VLO",  # Valero Energy (Dividendos)
-    "CSPX.L",  # iShares Core S&P 500 UCITS ETF (ETF)
-]
-
-# Lista de tickers Empresas candidatas para el scanner
-CANDIDATE_TICKERS = [
-    "O",  # Realty Income
-    "JNJ",  # Johnson & Johnson
-    "BG",  # Bunge Global
-    "ABBV",  # AbbVie
-    "KO",  # Coca-Cola
-    "MDT",  # Medtronic
-]
+# ---------------- INDICADORES ----------------
 
 
-def get_stock_price(ticker: str) -> dict:
+def _calculate_sma(series: pd.Series, window: int) -> Optional[float]:
+    if len(series) < window:
+        return None
+
+    result = cast(pd.Series, series.rolling(window=window).mean())
+
+    last_value = result.iat[-1]
+
+    if pd.isna(last_value):
+        return None
+
+    return float(last_value)
+
+
+def _calculate_rsi(series: pd.Series, period: int = 14) -> Optional[float]:
+    if len(series) < period:
+        return None
+
+    delta = series.diff()
+
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+
+    avg_gain = cast(pd.Series, gain.rolling(window=period).mean())
+    avg_loss = cast(pd.Series, loss.rolling(window=period).mean())
+
+    avg_gain_last = avg_gain.iat[-1]
+    avg_loss_last = avg_loss.iat[-1]
+
+    # Validación de NaN (CRÍTICO en datos reales)
+    if pd.isna(avg_gain_last) or pd.isna(avg_loss_last):
+        return None
+
+    if avg_loss_last == 0:
+        return 100.0
+
+    rs = avg_gain_last / avg_loss_last
+    rsi = 100 - (100 / (1 + rs))
+
+    return float(rsi)
+
+
+def _calculate_drawdown(series: pd.Series, window: int = 90) -> Optional[float]:
+    if len(series) < window:
+        return None
+
+    recent = cast(pd.Series, series.iloc[-window:])
+
+    max_price = recent.max()
+    current_price = recent.iat[-1]
+
+    # Validaciones robustas
+    if pd.isna(max_price) or pd.isna(current_price):
+        return None
+
+    if max_price == 0:
+        return None
+
+    return float((current_price - max_price) / max_price)
+
+
+# ---------------- SEÑALES ----------------
+
+
+def _is_price_below_sma(price: float, sma: Optional[float]) -> bool:
+    return sma is not None and price < sma
+
+
+def _is_rsi_oversold(rsi: Optional[float]) -> bool:
+    return rsi is not None and rsi < 40
+
+
+def _is_in_drawdown(drawdown: Optional[float]) -> bool:
+    return drawdown is not None and drawdown < -0.10
+
+
+def _is_bullish_trend(sma_50: Optional[float], sma_200: Optional[float]) -> bool:
+    return sma_50 is not None and sma_200 is not None and sma_50 > sma_200
+
+
+# ---------------- MAIN ----------------
+
+
+def get_price_analysis(ticker: str) -> Optional[Dict]:
     """
-    Obtiene el precio actual y variación diaria de una acción.
-
-    Args:
-        ticker: Símbolo de la acción. Ejemplo: 'NVDA'
-
-    Returns:
-        Diccionario con precio, cambio porcentual y nombre de la empresa.
-        Retorna None si ocurre un error.
+    Obtiene datos técnicos y detecta oportunidad de compra
     """
-    try:
-        # Descargamos la informacion del ticker desde Yahoo Finance
-        stock = yf.Ticker(ticker)
-        history = stock.history(period="2d")
 
-        if history.empty:
-            print(f"[WARNING] No se encontraron datos históricos para {ticker}")
-            return {
-                "ticke": ticker,
-                "valid": False,
-            }
-
-        # Extraemos los datos que necesitamos
-        # .get() es seguro: si el dato ne existe retorna el valor por defecto
-
-        current_price = history["Close"].iloc[-1]  # Precio de cierre más reciente
-
-        if len(history) > 1:
-            previous_close = history["Close"].iloc[
-                -2
-            ]  # Precio de cierre del día anterior
-        else:
-            previous_close = current_price  # Si no hay datos anteriores, usamos el precio actual para evitar errores
-
-        try:
-            info = stock.info
-        except Exception:
-            info = {}
-
-        company_name = info.get(
-            "shortName", ticker
-        )  # Nombre de la empresa o el ticker si no se encuentra
-
-        # Calculamos el cambio porcentual
-        if previous_close != 0:
-            change_percent = ((current_price - previous_close) / previous_close) * 100
-
-        # si no -> ponemos 0% para no romper el programa
-        else:
-            change_percent = 0.0
-
-        return {
-            "ticker": ticker,
-            "name": company_name,
-            "price": round(current_price, 2),
-            "change_percent": round(change_percent, 2),
-            "previous_close": round(previous_close, 2),
-            "valid": True,
-        }
-
-    except Exception as e:
-        print(f"[ERROR] No se pudo obtener precio de {ticker}: {e}")
-        return {
-            "ticker": ticker,
-            "valid": False,
-        }
-
-
-def get_portfolio_prices() -> list[dict]:
-    """
-    Obtiene los precios de todas las empresas del portafolio.
-
-    Returns:
-        Lista de diccionarios con datos de cada empresa.
-    """
-    results = []
-    for ticker in PORTFOLIO:
-        data = get_stock_price(ticker)
-        if data.get("valid"):  # Solo agregamos si la consulta fue exitosa
-            results.append(data)
-
-    return results
-
-
-def get_company_fundamentals(ticker: str) -> dict | None:
-    """
-    Obtiene datos fundamentales de una empresa desde Yahoo Finance.
-
-    Args:
-        ticker: Símbolo de la acción. Ejemplo: 'ABBV'
-
-    Returns:
-        Diccionario con dividend_yield, payout_ratio, free_cash_flow, total_debt, sector.
-        Retorna None si ocurre un error o si los datos no están disponibles.
-    """
     try:
         stock = yf.Ticker(ticker)
 
-        try:
-            info = stock.info
-        except Exception:
-            print(f"=[WARNING] info vacia para {ticker}")
+        # 12 meses de datos diarios
+        hist = stock.history(period="1y")
+
+        if hist.empty or "Close" not in hist:
             return None
 
-        if not info:
-            print(f"=[WARNING] info vacia para {ticker}")
+        close = cast(pd.Series, hist["Close"])
+
+        # 🔹 Validación extra (NaN al final es común en yfinance)
+        last_price = close.iat[-1]
+
+        if pd.isna(last_price):
             return None
 
-        dividend_yield = info.get("dividendYield")
-        payout_ratio = info.get("payoutRatio")
-        free_cash_flow = info.get("freeCashflow")
-        total_debt = info.get("totalDebt")
-        sector = info.get("sector")
-
-        current_price = info.get("currentPrice") or info.get("regularMarketPrice")
+        current_price = to_float(last_price)
 
         if current_price is None:
-            current_price = 0.0
+            return None
 
+        # -------- INDICADORES --------
+        sma_50 = _calculate_sma(close, 50)
+        sma_200 = _calculate_sma(close, 200)
+        rsi = _calculate_rsi(close)
+        drawdown = _calculate_drawdown(close)
+
+        # Validación crítica (evita señales falsas)
+        if any(v is None for v in [sma_50, sma_200, rsi, drawdown]):
+            return None
+
+        # -------- SEÑALES --------
+        below_sma50 = _is_price_below_sma(current_price, sma_50)
+        below_sma200 = _is_price_below_sma(current_price, sma_200)
+        rsi_oversold = _is_rsi_oversold(rsi)
+        in_drawdown = _is_in_drawdown(drawdown)
+        bullish_trend = _is_bullish_trend(sma_50, sma_200)
+
+        # -------- SCORE DE COMPRA --------
+        score = 0
+
+        score += 1 if below_sma50 else 0
+        score += 2 if below_sma200 else 0  # mayor peso
+        score += 2 if rsi_oversold else 0
+        score += 1 if in_drawdown else 0
+        score += 1 if bullish_trend else 0
+
+        # -------- CLASIFICACIÓN --------
+        if score >= 5:
+            signal = "STRONG_BUY"
+        elif score >= 3:
+            signal = "BUY"
+        else:
+            signal = "HOLD"
+
+        # -------- OUTPUT --------
         return {
             "ticker": ticker,
-            "dividend_yield": dividend_yield,
-            "payout_ratio": payout_ratio,
-            "free_cash_flow": free_cash_flow,
-            "total_debt": total_debt,
-            "sector": sector,
             "current_price": current_price,
+            "sma_50": sma_50,
+            "sma_200": sma_200,
+            "rsi": rsi,
+            "drawdown": drawdown,
+            "score": score,
+            "signal": signal,
+            "bullish_trend": bullish_trend,
         }
 
     except Exception as e:
-        print(f"[ERROR] No se pudieron obtener datos fundamentales de {ticker}: {e}")
+        print(f"[ERROR prices] {ticker}: {e}")
         return None
