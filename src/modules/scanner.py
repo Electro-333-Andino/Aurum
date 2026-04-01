@@ -18,8 +18,6 @@ limitations under the License.
 
 from typing import Dict, Optional
 
-from numpy.ma.core import divide
-
 from src.modules.fundamentals import get_clean_fundamentals
 
 # ---------------- SCORING ----------------
