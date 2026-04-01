@@ -16,9 +16,9 @@ limitations under the License.
 
 # scanner.py
 
-from typing import Dict, Optional
+from typing import Dict
 
-from src.modules.fundamentals import get_clean_fundamentals
+# from src.modules.fundamentals import get_clean_fundamentals
 
 # ---------------- SCORING ----------------
 
