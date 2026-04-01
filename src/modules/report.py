@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+# report.py
 # Módulo responsable ÚNICAMENTE de mostrar datos en terminal.
 # Usa la librería 'rich' para formato profesional con colores y tablas.
 
