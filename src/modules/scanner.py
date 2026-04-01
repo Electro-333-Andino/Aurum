@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 # scanner.py
-from decimal import DivisionUndefined
+
 from typing import Dict, Optional
 
 from numpy.ma.core import divide
