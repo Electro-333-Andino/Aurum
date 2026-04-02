@@ -14,13 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+# news.py
 # Módulo responsable ÚNICAMENTE de noticias macroeconómicas desde Reuters.
+import os
 from datetime import datetime, timedelta, timezone
 
 import feedparser
+import finnhub
+from dotenv import load_dotenv
 
 # Ruta de importación para TranslatorService
 from src.utils.translator import translator_service
+
+load_dotenv()
 
 # --- FUENTES RSS MACRO DE CNBC (según CONTEXT.md) ---
 # Se utiliza solo CNBC para noticias macro, ya que Reuters cambió sus URLs.
@@ -54,6 +60,14 @@ MACRO_KEYWORDS = [
     "tariff",
     "trade",
 ]
+
+
+# Cliente Finnhub
+def _get_finnhub_client():
+    api_key = os.getenv("FINNHUB_API_KEY")
+    if not api_key:
+        raise ValueError("FINNHUB_API_KEY no encontrada en .env")
+    return finnhub.Client(api_key=api_key)
 
 
 def get_last_business_day(start_date: datetime, days_back: int) -> datetime:
@@ -208,3 +222,58 @@ def get_macro_news(max_news: int = 8, max_business_days_back: int = 2) -> list[d
         print(f"[ERROR] No se pudieron obtener noticias macro de CNBC: {e}")
 
     return macro_news
+
+
+def get_company_news(ticker: str, max_news: int = 5) -> list[dict]:
+    """
+    Obtiene noticias recientes de una empresa específica via Finnhub.
+
+    Args:
+        ticker: Símbolo de la empresa. Ejemplo: "NVDA"
+        max_news: Cantidad máxima de noticias a retornar.
+
+    Returns:
+        Lista de diccionarios con noticias traducidas.
+    """
+    try:
+        client = _get_finnhub_client()
+
+        # Rango de fechas — últimos 7 días
+        today = datetime.now(tz=timezone.utc)
+        week_ago = today - timedelta(days=7)
+
+        date_from = week_ago.strftime("%Y-%m-%d")
+        date_to = today.strftime("%Y-%m-%d")
+
+        # Llamada a la API
+        raw_news = client.company_news(ticker, _from=date_from, to=date_to)
+
+        if not raw_news:
+            return []
+
+        news = []
+
+        for item in raw_news[:max_news]:
+            headline = item.get("headline", "")
+
+            if not headline:
+                continue
+
+            # Traducir titular
+            translated = translator_service.translate(headline)
+
+            news.append(
+                {
+                    "ticker": ticker,
+                    "title": translated,
+                    "original_title": headline,
+                    "source": item.get("source", ""),
+                    "url": item.get("url", ""),
+                }
+            )
+
+        return news
+
+    except Exception as e:
+        print(f"[ERROR news] company {ticker}: {e}")
+        return []
