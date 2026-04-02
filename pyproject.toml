@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "deep-translator==1.11.4",
     "feedparser==6.0.12",
     "finnhub-python==2.4.27",
     "python-dotenv==1.2.2",
