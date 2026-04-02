@@ -227,11 +227,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "feedparser", specifier = ">=6.0.12" },
-    { name = "python-dotenv", specifier = ">=1.2.2" },
-    { name = "rich", specifier = ">=14.3.3" },
-    { name = "schedule", specifier = ">=1.2.2" },
-    { name = "yfinance", specifier = ">=1.2.0" },
+    { name = "feedparser", specifier = "==6.0.12" },
+    { name = "python-dotenv", specifier = "==1.2.2" },
+    { name = "rich", specifier = "==14.3.3" },
+    { name = "schedule", specifier = "==1.2.2" },
+    { name = "yfinance", specifier = "==1.2.0" },
 ]
 
 [[package]]
