@@ -236,7 +236,7 @@ def display_candidate_signals(signals: list[dict]) -> None:
     console.print(table)
 
 
-def display_etf_analysis(etf_data: dict) -> None:
+def display_etf_analysis(etf_data: dict | None) -> None:
     """
     Muestra el análisis técnico y señal DCA para CSPX.L
 

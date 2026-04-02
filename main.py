@@ -13,44 +13,77 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# Punto de entrada principal del programa.
-# Coordina los módulos sin contener lógica de negocio.
 
-from src.modules.news import get_macro_news
-from src.modules.prices import PORTFOLIO, get_portfolio_prices
-from src.modules.report import (
-    display_candidate_signals,  # <- Descomentado
-    display_finnhub_news,
-    display_macro_news,
-    display_portfolio,
-    display_upcoming_earnings,
-)
-from src.modules.scanner import get_candidate_signals, get_full_portfolio_analysis
+# main.py
+# Coordinador principal — sin lógica de negocio
+
+from src.modules import report
+from src.modules.etf_analyzer import analyze_etf
+from src.modules.news import get_company_news, get_macro_news
+from src.modules.scanner import scan_ticker
+
+# ---------------- CONFIGURACIÓN ----------------
+
+# Portafolio actual
+PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "V", "BG", "O"]
+
+# Candidatas a dividendos
+CANDIDATES = [
+    # Healthcare
+    "JNJ",  # Johnson & Johnson
+    "ABBV",  # AbbVie
+    "MDT",  # Medtronic
+    # Consumer Defensive
+    "KO",  # Coca-Cola
+    "PG",  # Procter & Gamble
+    "CL",  # Colgate-Palmolive
+    # Tecnología
+    "TXN",  # Texas Instruments
+    # Infraestructura energética
+    "ENB",  # Enbridge
+    # Financial Services
+    "JPM",  # JPMorgan Chase
+    "BLK",  # BlackRock
+]
 
 
-def main():
-    """Función principal que ejecuta el reporte completo."""
+# ---------------- MAIN ----------------
 
-    # --- PRECIOS ---
-    print("Obteniendo precios del mercado...")
-    portfolio_data: list[dict] = get_portfolio_prices()
-    display_portfolio(portfolio_data)
 
-    # --- NOTICIAS MACRO ---
-    print("Obteniendo noticias macro del día...")
+def run() -> None:
+    """
+    Ejecuta el briefing completo de Aurum
+    """
+
+    # 1. Noticias macro
     macro_news = get_macro_news()
-    display_macro_news(macro_news)
 
-    # --- ANÁLISIS FINNHUB ---
-    print("Obteniendo análisis por empresa...")
-    analysis = get_full_portfolio_analysis(PORTFOLIO)
-    display_finnhub_news(analysis, portfolio_data)
-    display_upcoming_earnings(analysis["upcoming_earnings"])
+    # 2. Noticias por empresa del portafolio
+    company_news = []
+    for ticker in PORTFOLIO:
+        news = get_company_news(ticker)
+        company_news.extend(news)
 
-    # --- SEÑALES DE CANDIDATAS ---
-    candidate_signals = get_candidate_signals()
-    display_candidate_signals(candidate_signals)  # <- Descomentado
+    # 3. Scanner de candidatas a dividendos
+    scanner_results = []
+    for ticker in CANDIDATES:
+        result = scan_ticker(ticker)
+        if result is not None:
+            scanner_results.append(result)
 
+    # 4. Análisis ETF
+    etf_data = analyze_etf()
+
+    # 5. Reporte en terminal
+    report.display_scanner_results(scanner_results)
+
+    if etf_data is not None:
+        report.display_etf_analysis(etf_data)
+
+    report.display_macro_news(macro_news)
+
+
+# ---------------- ENTRADA ----------------
 
 if __name__ == "__main__":
-    main()
+    run()
