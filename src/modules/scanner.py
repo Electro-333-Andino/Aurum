@@ -15,10 +15,9 @@ limitations under the License.
 """
 
 # scanner.py
+from typing import Dict, Optional
 
-from typing import Dict
-
-# from src.modules.fundamentals import get_clean_fundamentals
+from src.modules.fundamentals import get_clean_fundamentals
 
 # ---------------- SCORING ----------------
 
@@ -75,10 +74,44 @@ def _calculate_score(fundamentals: Dict) -> int:
 
     # ---------------- SEÑAL ----------------
 
-    def _get_signal(score: int) -> str:
-        if score >= 7:
-            return "COMPRAR"
-        elif score >= 4:
-            return "ESPERAR"
-        else:
-            return "DESCARTAR"
+
+def _get_signal(score: int) -> str:
+    if score >= 7:
+        return "COMPRAR"
+    elif score >= 4:
+        return "ESPERAR"
+    else:
+        return "DESCARTAR"
+
+
+# ---------------- MAIN ----------------
+
+
+def scan_ticker(ticker: str) -> Optional[Dict]:
+    """
+    Analiza una empresa y devuelve su score y señal de inversión
+    """
+
+    # 1. Obtener fundamentales ya limpios y validados
+    fundamentals = get_clean_fundamentals(ticker)
+
+    # 2. Si no hay datos válidos, descartamos
+    if fundamentals is None:
+        return None
+
+    # 3. Calcular score
+    score = _calculate_score(fundamentals)
+
+    # 4. Obtener señal
+    signal = _get_signal(score)
+
+    # 5. Devolver todo junto
+    return {
+        "ticker": ticker,
+        "score": score,
+        "signal": signal,
+        "dividend_yield": fundamentals.get("dividend_yield"),
+        "payout_ratio": fundamentals.get("payout_ratio"),
+        "free_cash_flow": fundamentals.get("free_cash_flow"),
+        "debt_to_fcf": fundamentals.get("debt_to_fcf"),
+    }
