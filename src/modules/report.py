@@ -29,58 +29,6 @@ from rich.table import Table
 console = Console()
 
 
-def display_portfolio(portfolio_data: list[dict]) -> None:
-    """
-    Muestra la tabla del portafolio en terminal con colores.
-
-    Args:
-        portfolio_data: Lista de diccionarios retornada por get_portfolio_prices()
-    """
-    # Encabezado con fecha y hora actual
-    now = datetime.now().strftime("%A %d %B %Y - %H:%M")
-    console.print("\n[bold cyan]INVESTMENT MORNING BRIEF — AURUM[/bold cyan]")
-    console.print(f"[dim]{now}[/dim]\n")
-
-    # Creamos la tabla con rich
-    table = Table(
-        box=box.ROUNDED,
-        show_header=True,
-        header_style="bold white on dark_blue",
-    )
-
-    # Definimos las columnas
-    table.add_column("Ticker", style="bold yellow", width=8)
-    table.add_column("Empresa", style="white", width=35)
-    table.add_column("Precio", style="bold white", width=12, justify="right")
-    table.add_column("Cambio %", width=12, justify="right")
-    table.add_column("Estado", width=12, justify="center")
-
-    # Llenamos la tabla con los datos
-    for stock in portfolio_data:
-        change = stock["change_percent"]
-
-        # Color según si sube o baja
-        if change > 0:
-            change_str = f"[green]+{change}%[/green]"
-            status = "[green]▲ Subiendo[/green]"
-        elif change < 0:
-            change_str = f"[red]{change}%[/red]"
-            status = "[red]▼ Bajando[/red]"
-        else:
-            change_str = f"[dim]{change}%[/dim]"
-            status = "[dim]── Estable[/dim]"
-
-        table.add_row(
-            stock["ticker"],
-            stock["name"],
-            f"${stock['price']}",
-            change_str,
-            status,
-        )
-
-    console.print(table)
-
-
 def display_macro_news(macro_news: list[dict]) -> None:
     """
     Muestra las noticias macroeconómicas del día en terminal.
@@ -420,6 +368,55 @@ def display_scanner_results(results: list[dict]) -> None:
             dividend_str,
             payout_str,
             debt_str,
+        )
+
+    console.print(table)
+    console.print("[dim]─────────────────────────────────────────[/dim]")
+
+
+def display_portfolio(portfolio_data: list[dict]) -> None:
+    """
+    Muestra tabla del portafolio con precio actual y cambio % del día
+    """
+    now = datetime.now().strftime("%A %d %B %Y - %H:%M")
+    console.print("\n[bold cyan]INVESTMENT MORNING BRIEF — AURUM[/bold cyan]")
+    console.print(f"[dim]{now}[/dim]\n")
+
+    if not portfolio_data:
+        console.print("[dim]  Sin datos del portafolio disponibles[/dim]\n")
+        return
+
+    table = Table(
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold white on dark_blue",
+    )
+
+    table.add_column("Ticker", style="bold yellow", width=8)
+    table.add_column("Empresa", style="white", width=30)
+    table.add_column("Precio", style="bold white", width=12, justify="right")
+    table.add_column("Cambio %", width=12, justify="right")
+    table.add_column("Estado", width=14, justify="center")
+
+    for stock in portfolio_data:
+        change = stock["change_percent"]
+
+        if change > 0:
+            change_str = f"[green]+{change}%[/green]"
+            status = "[green]▲ Subiendo[/green]"
+        elif change < 0:
+            change_str = f"[red]{change}%[/red]"
+            status = "[red]▼ Bajando[/red]"
+        else:
+            change_str = f"[dim]{change}%[/dim]"
+            status = "[dim]── Estable[/dim]"
+
+        table.add_row(
+            stock["ticker"],
+            stock["name"],
+            f"${stock['price']}",
+            change_str,
+            status,
         )
 
     console.print(table)

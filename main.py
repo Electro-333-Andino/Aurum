@@ -20,12 +20,13 @@ limitations under the License.
 from src.modules import report
 from src.modules.etf_analyzer import analyze_etf
 from src.modules.news import get_company_news, get_macro_news
+from src.modules.prices import get_portfolio_prices
 from src.modules.scanner import scan_ticker
 
 # ---------------- CONFIGURACIÓN ----------------
 
 # Portafolio actual
-PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "V", "BG", "O"]
+PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "V", "O"]
 
 # Candidatas a dividendos
 CANDIDATES = [
@@ -51,35 +52,33 @@ CANDIDATES = [
 
 
 def run() -> None:
-    """
-    Ejecuta el briefing completo de Aurum
-    """
 
-    # 1. Noticias macro
+    # 1. Precios del portafolio
+    portfolio_data = get_portfolio_prices(PORTFOLIO)
+
+    # 2. Noticias macro
     macro_news = get_macro_news()
 
-    # 2. Noticias por empresa del portafolio
+    # 3. Noticias por empresa
     company_news = []
     for ticker in PORTFOLIO:
         news = get_company_news(ticker)
         company_news.extend(news)
 
-    # 3. Scanner de candidatas a dividendos
+    # 4. Scanner de candidatas
     scanner_results = []
     for ticker in CANDIDATES:
         result = scan_ticker(ticker)
         if result is not None:
             scanner_results.append(result)
 
-    # 4. Análisis ETF
+    # 5. Análisis ETF
     etf_data = analyze_etf()
 
-    # 5. Reporte en terminal
+    # 6. Reporte en terminal
+    report.display_portfolio(portfolio_data)
     report.display_scanner_results(scanner_results)
-
-    if etf_data is not None:
-        report.display_etf_analysis(etf_data)
-
+    report.display_etf_analysis(etf_data)
     report.display_macro_news(macro_news)
 
 

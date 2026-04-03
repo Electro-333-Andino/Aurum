@@ -188,3 +188,55 @@ def get_price_analysis(ticker: str) -> Optional[Dict]:
     except Exception as e:
         print(f"[ERROR prices] {ticker}: {e}")
         return None
+
+
+def get_portfolio_prices(tickers: list[str]) -> list[dict]:
+    """
+    Obtiene precio actual y cambio % del día para cada ticker del portafolio
+    """
+    results = []
+
+    for ticker in tickers:
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="5d")
+
+            if hist.empty or "Close" not in hist:
+                continue
+
+            close = cast(pd.Series, hist["Close"])
+            close = close.dropna()
+
+            if len(close) < 2:
+                continue
+
+            current_price = to_float(close.iat[-1])
+            prev_price = to_float(close.iat[-2])
+
+            if current_price is None or prev_price is None:
+                continue
+
+            if prev_price == 0:
+                continue
+
+            # Cambio porcentual del día
+            change_percent = round((current_price - prev_price) / prev_price * 100, 2)
+
+            # Nombre de la empresa
+            info = stock.info
+            name = info.get("shortName", ticker)
+
+            results.append(
+                {
+                    "ticker": ticker,
+                    "name": name,
+                    "price": round(current_price, 2),
+                    "change_percent": change_percent,
+                }
+            )
+
+        except Exception as e:
+            print(f"[ERROR prices] {ticker}: {e}")
+            continue
+
+    return results
