@@ -125,11 +125,13 @@ def get_price_analysis(ticker: str) -> Optional[Dict]:
 
         close = cast(pd.Series, hist["Close"])
 
-        # 🔹 Validación extra (NaN al final es común en yfinance)
-        last_price = close.iat[-1]
+        # elimina filas NaN
+        close = close.dropna()
 
-        if pd.isna(last_price):
+        if close.empty:
             return None
+
+        last_price = close.iat[-1]
 
         current_price = to_float(last_price)
 
