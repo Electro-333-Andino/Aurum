@@ -1,45 +1,70 @@
-# Aurum: Investment Morning Brief
+# Aurum 🪙
 
-**Aurum** es una herramienta de línea de comandos simple pero potente, diseñada para proporcionar un resumen rápido de tu portafolio de inversiones. Obtiene los precios de las acciones en tiempo real desde Yahoo Finance y los muestra en una tabla limpia y fácil de leer directamente en tu terminal.
+**Aurum** es un motor de análisis financiero de alto rendimiento diseñado para la terminal. Este sistema permite realizar un escaneo profundo de activos bajo un enfoque de **inversión sostenible y técnica**, priorizando la seguridad del software y el rigor de los datos financieros.
 
-## Características
+---
 
-*   **Datos en Tiempo Real:** Obtiene los últimos precios de las acciones utilizando la librería `yfinance`.
-*   **Reportes Claros y Concisos:** Muestra el rendimiento de tu portafolio en una tabla formateada con colores, gracias a la librería `rich`.
-*   **Fácil de Usar:** Simplemente ejecuta el script para obtener tu informe de inversión diario.
-*   **Personalizable:** Modifica fácilmente la lista `PORTFOLIO` en `src/modules/prices.py` para rastrear tus propias acciones.
+## 🚀 Propósito del Proyecto
 
-## Funcionalidades Principales
+El objetivo de Aurum es transformar datos financieros crudos en señales de inversión accionables. A diferencia de las herramientas comerciales, Aurum permite un control total sobre las métricas de **sostenibilidad de dividendos** y el filtrado de **ETFs de acumulación**, operando bajo una arquitectura limpia y modular en Python.
 
-- Obtener los precios de las acciones en tiempo real para tu portafolio desde Yahoo Finance.
-- Recopilar noticias macroeconómicas relevantes para proporcionar contexto de mercado.
-- Realizar análisis detallados y recolectar el sentimiento de las noticias para empresas individuales utilizando Finnhub.
-- Mostrar toda esta información en una salida clara y formateada directamente en tu terminal.
+## ✨ Características Principales
 
-## Cómo Empezar
+* **Análisis Fundamental:** Evaluación de ratios de deuda, flujo de caja libre (Free Cash Flow) y cobertura de dividendos.
+* **Estrategia de ETFs:** Filtros específicos para identificar fondos de acumulación eficientes.
+* **Indicadores Técnicos:** Cálculo nativo de RSI, Medias Móviles (SMA/EMA) y otros indicadores de momentum.
+* **Desempeño Moderno:** Ejecución optimizada utilizando las últimas capacidades de Python 3.12.
+* **Seguridad de Suministro:** Configurado para prevenir ataques de cadena de suministro mediante la gestión estricta de dependencias.
 
-1.  **Clona el repositorio:**
-    ```bash
-    git clone https://github.com/Electro-333-Andino/Aurum.git
-    cd Aurum
-    ```
+## 🛠️ Stack Tecnológico
 
-2.  **Instala las dependencias:**
-    *(Nota: Se recomienda usar un entorno virtual)*
+* **Lenguaje:** [Python 3.12+](https://www.python.org/)
+* **Gestor de Paquetes:** [uv](https://github.com/astral-sh/uv) (Rápido, seguro y determinista).
+* **Entorno de Ejecución:** Optimizado para Linux (probado en Linux Mint).
+* **Editor Recomendado:** [Zed](https://zed.dev/) (Configurado para máxima productividad).
 
-    Puedes instalar las dependencias usando `uv` (recomendado) o `pip3`.
+## 📦 Instalación
 
-    **Opción A: Usando `uv`**
-    ```bash
-    uv sync
-    ```
+Asegúrate de tener instalado el gestor de paquetes `uv`.
 
-    **Opción B: Usando `pip3`**
-    ```bash
-    pip3 install .
-    ```
+1. **Clonar el repositorio:**
+   \`\`\`bash
+   git clone https://github.com/Electro-333-Andino/Aurum.git
+   cd Aurum
+   \`\`\`
 
-3.  **Ejecuta la aplicación:**
-    ```bash
-    python3 main.py
-    ```
+2. **Sincronizar el entorno y dependencias:**
+   \`\`\`bash
+   uv sync
+   \`\`\`
+
+3. **Configurar variables de entorno:**
+   Crea un archivo `.env` en la raíz del proyecto para tus credenciales de API:
+   \`\`\`bash
+   API_KEY_FINANCE=tu_clave_aqui
+   \`\`\`
+
+## 📈 Uso del Motor
+
+Para ejecutar el motor de análisis desde la raíz del proyecto:
+
+\`\`\`bash
+uv run python main.py
+\`\`\`
+
+## 🛡️ Seguridad
+
+Este proyecto implementa políticas de seguridad proactivas en el desarrollo:
+* **Aislamiento:** Uso de entornos virtuales deterministas.
+* **Restricción de Scripts:** Desactivación de scripts de post-instalación en paquetes para evitar ejecución de código arbitrario.
+* **Validación de Dependencias:** Bloqueo de versiones mediante \`uv.lock\`.
+
+## 🗺️ Roadmap
+
+- [ ] Implementación de caché de datos locales para optimizar llamadas a APIs.
+- [ ] Integración de la librería \`Rich\` para una interfaz de terminal visualmente mejorada.
+- [ ] Generación de reportes automatizados en formato Markdown.
+
+---
+
+**Desarrollado con precisión técnica y enfoque en seguridad financiera.**
