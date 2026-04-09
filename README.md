@@ -25,32 +25,32 @@ El objetivo de Aurum es transformar datos financieros crudos en señales de inve
 
 ## 📦 Instalación
 
-Asegúrate de tener instalado el gestor de paquetes `uv`.
+Asegúrate de tener instalado el gestor de paquetes \`uv\`.
 
 1. **Clonar el repositorio:**
-   \`\`\`bash
-   git clone https://github.com/Electro-333-Andino/Aurum.git
-   cd Aurum
-   \`\`\`
+```bash
+git clone https://github.com/Electro-333-Andino/Aurum.git
+cd Aurum
+```
 
 2. **Sincronizar el entorno y dependencias:**
-   \`\`\`bash
-   uv sync
-   \`\`\`
+```bash
+uv sync
+```
 
 3. **Configurar variables de entorno:**
-   Crea un archivo `.env` en la raíz del proyecto para tus credenciales de API:
-   \`\`\`bash
-   API_KEY_FINANCE=tu_clave_aqui
-   \`\`\`
+Crea un archivo \`.env\` en la raíz del proyecto para tus credenciales de API:
+```bash
+FINNHUB_API_KEY=tu_clave_aqui
+```
 
 ## 📈 Uso del Motor
 
 Para ejecutar el motor de análisis desde la raíz del proyecto:
 
-\`\`\`bash
+```bash
 uv run python main.py
-\`\`\`
+```
 
 ## 🛡️ Seguridad
 
@@ -61,9 +61,9 @@ Este proyecto implementa políticas de seguridad proactivas en el desarrollo:
 
 ## 🗺️ Roadmap
 
-- [ ] Implementación de caché de datos locales para optimizar llamadas a APIs.
-- [ ] Integración de la librería \`Rich\` para una interfaz de terminal visualmente mejorada.
-- [ ] Generación de reportes automatizados en formato Markdown.
+- [x] Implementación de caché de datos locales para optimizar llamadas a APIs.
+- [x] Integración de la librería \`Rich\` para una interfaz de terminal visualmente mejorada.
+- [x] Generación de reportes automatizados en formato Markdown.
 
 ---
 
