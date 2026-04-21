@@ -1,0 +1,65 @@
+/*
+Copyright 2026 Anderson Andino
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+/* web/static/style.css */
+
+:root {
+    /* Paleta Metalizada (Máximo 6 tonos) */
+    --gold-metallic: linear-gradient(
+        145deg,
+        #bf953f,
+        #fcf6ba,
+        #b38728,
+        #fbf5b7,
+        #aa771c
+    );
+    --red-metallic: linear-gradient(145deg, #8b0000, #ff4d4d, #a30000);
+    --blue-metallic: linear-gradient(145deg, #001f3f, #0074d9, #001f3f);
+    --bg-dark: #0d0d0d; /* Negro profundo para minimalismo */
+    --text-silver: #e0e0e0; /* Gris plata para lectura */
+    --border-gold: #aa771c; /* Color de acento para bordes */
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-silver);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: #1a1a1a;
+    border: 1px solid var(--border-gold);
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.btn-gold {
+    background: var(--gold-metallic);
+    border: none;
+    padding: 10px 20px;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    text-transform: uppercase;
+}

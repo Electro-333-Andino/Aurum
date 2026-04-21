@@ -1,15 +1,18 @@
 [project]
 name = "investment-brief"
-version = "0.1.0"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "deep-translator==1.11.4",
+    "fastapi==0.136.0",
     "feedparser==6.0.12",
     "finnhub-python==2.4.27",
+    "jinja2==3.1.6",
     "python-dotenv==1.2.2",
     "rich==14.3.3",
     "schedule==1.2.2",
+    "uvicorn==0.45.0",
     "yfinance==1.2.0",
 ]
