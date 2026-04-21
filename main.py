@@ -18,7 +18,7 @@ limitations under the License.
 # Coordinador principal — sin lógica de negocio
 
 from src.modules import report
-from src.modules.etf_analyzer import analyze_etf
+from src.modules.etf_analyzer import analyze_etf_for_cli  # Updated import for CLI
 from src.modules.news import get_company_news, get_macro_news
 from src.modules.prices import get_portfolio_prices
 from src.modules.scanner import scan_ticker
@@ -26,12 +26,11 @@ from src.modules.scanner import scan_ticker
 # ---------------- CONFIGURACIÓN ----------------
 
 # Portafolio actual
-PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "V", "O"]
+PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "JNJ", "O"]
 
 # Candidatas a dividendos
 CANDIDATES = [
     # Healthcare
-    "JNJ",  # Johnson & Johnson
     "ABBV",  # AbbVie
     "MDT",  # Medtronic
     # Consumer Defensive
@@ -51,8 +50,7 @@ CANDIDATES = [
 # ---------------- MAIN ----------------
 
 
-def run() -> None:
-
+def run_terminal_app() -> None:  # Renamed from run()
     # 1. Precios del portafolio
     portfolio_data = get_portfolio_prices(PORTFOLIO)
 
@@ -73,7 +71,8 @@ def run() -> None:
             scanner_results.append(result)
 
     # 5. Análisis ETF
-    etf_data = analyze_etf()
+    # Usa la nueva función auxiliar para el CLI
+    etf_data = analyze_etf_for_cli()  # Changed to analyze_etf_for_cli()
 
     # 6. Reporte en terminal
     report.display_portfolio(portfolio_data)
@@ -85,4 +84,4 @@ def run() -> None:
 # ---------------- ENTRADA ----------------
 
 if __name__ == "__main__":
-    run()
+    run_terminal_app()  # Changed to run_terminal_app()

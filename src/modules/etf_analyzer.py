@@ -161,3 +161,12 @@ class ETFAnalyzer:
             "score": score_and_signal["score"],
             "signal": score_and_signal["signal"],
         }
+
+
+# Función auxiliar para uso del CLI
+def analyze_etf_for_cli(ticker: str = "CSPX.L") -> Optional[Dict]:
+    """
+    Función auxiliar para el CLI que analiza el ETF.
+    """
+    analyzer = ETFAnalyzer(ticker)
+    return analyzer.analyze_etf()
