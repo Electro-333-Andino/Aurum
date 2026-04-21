@@ -1,7 +1,7 @@
 """
 Copyright 2026 Anderson Andino
 
-Licensed under the Apache License, Version 20 (the "License");
+Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
@@ -14,100 +14,150 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 # etf_analyzer.py
-# Módulo responsable de generar señales DCA para CSPX.L
+# Modulo responsable de analizar ETFs y generar señales de compra.
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union, cast
 
-from src.modules.prices import get_price_analysis
+import pandas as pd
+import yfinance as yf
 
-# ETF principal
-CSPX_TICKER = "CSPX.L"
+from src.utils.calculations import (
+    calculate_drawdown_from_annual_high,
+    calculate_rsi,
+    calculate_sma,
+    to_float,
+)
 
-# ---------------- SCORING ----------------
 
+class ETFAnalyzer:
+    def __init__(self, ticker: str):
+        self.ticker = ticker
+        self.history_period = "1y"  # Data for 1 year to calculate 52-week high
 
-def _calculate_etf_score(analysis: Dict) -> int:
-    score = 0
+    def _fetch_historical_data(self) -> Optional[pd.Series]:
+        """Fetches historical 'Close' price data for the ETF."""
+        try:
+            stock = yf.Ticker(self.ticker)
+            hist = stock.history(period=self.history_period)
 
-    current_price = analysis.get("current_price")
-    sma_50 = analysis.get("sma_50")
-    sma_200 = analysis.get("sma_200")
-    rsi = analysis.get("rsi")
-    drawdown = analysis.get("drawdown")
-    bullish_trend = analysis.get("bullish_trend")
+            if hist.empty or "Close" not in hist:
+                return None
 
-    # Precio por debajo de SMA 200 — zona de acumulación fuerte
-    if current_price is not None and sma_200 is not None:
-        if current_price < sma_200:
+            close_prices = cast(pd.Series, hist["Close"])
+            close_prices = close_prices.dropna()
+
+            if close_prices.empty:
+                return None
+
+            return close_prices
+        except Exception as e:
+            print(f"[ERROR ETFAnalyzer] Error fetching data for {self.ticker}: {e}")
+            return None
+
+    def _calculate_etf_indicators(
+        self, close_prices: pd.Series
+    ) -> Dict[str, Optional[float]]:
+        """Calculates SMA 50, SMA 200, RSI, and Drawdown from annual high."""
+        current_price = to_float(close_prices.iat[-1])
+
+        if current_price is None:
+            return {
+                "current_price": None,
+                "sma_50": None,
+                "sma_200": None,
+                "rsi": None,
+                "drawdown": None,
+            }
+
+        sma_50 = calculate_sma(close_prices, 50)
+        sma_200 = calculate_sma(close_prices, 200)
+        rsi = calculate_rsi(close_prices)
+        drawdown = calculate_drawdown_from_annual_high(close_prices)
+
+        return {
+            "current_price": current_price,
+            "sma_50": sma_50,
+            "sma_200": sma_200,
+            "rsi": rsi,
+            "drawdown": drawdown,
+        }
+
+    def _generate_score_and_signal(
+        self,
+        current_price: float,
+        sma_50: Optional[float],
+        sma_200: Optional[float],
+        rsi: Optional[float],
+        drawdown: Optional[float],
+    ) -> Dict[str, Union[int, str]]:
+        """Generates a score and a buy signal based on ETF criteria."""
+        score = 0
+        signal = "ESPERAR"  # Default signal
+
+        # Validate all indicators are present before scoring
+        if any(v is None for v in [sma_50, sma_200, rsi, drawdown]):
+            return {"score": 0, "signal": signal}
+
+        # Factores del score
+        # Precio < SMA 200 → +3
+        if current_price < cast(float, sma_200):
             score += 3
-
-    # Precio por debajo de SMA 50 — corrección / pullback
-    if current_price is not None and sma_50 is not None:
-        if current_price < sma_50:
+        # Precio < SMA 50 → +2
+        if current_price < cast(float, sma_50):
             score += 2
+        # RSI < 40 → +2
+        if cast(float, rsi) < 40:
+            score += 2
+        # Drawdown > 10% → +3 (drawdown is negative, so drawdown < -0.10)
+        if cast(float, drawdown) < -0.10:
+            score += 3
+        # Tendencia alcista (Precio > SMA 200) → +1
+        if current_price > cast(float, sma_200):
+            score += 1
 
-    # RSI en zona de sobreventa
-    if rsi is not None and rsi < 40:
-        score += 2
+        # Sistema de señales ETF
+        if score >= 7:
+            signal = "COMPRAR FUERTE"
+        elif 4 <= score <= 6:
+            signal = "COMPRAR"
+        elif 2 <= score <= 3:
+            signal = "DCA NORMAL"
+        else:  # score < 2
+            signal = "ESPERAR"
 
-    # Drawdown mayor al 10%
-    if drawdown is not None and drawdown < -0.10:
-        score += 3
+        return {"score": score, "signal": signal}
 
-    # Tendencia alcista — SMA50 > SMA200
-    if bullish_trend:
-        score += 1
+    def analyze_etf(self) -> Optional[Dict]:
+        """
+        Main method to analyze the ETF and return the buy signal.
+        """
+        close_prices = self._fetch_historical_data()
+        if close_prices is None:
+            return None
 
-    return score
+        indicators = self._calculate_etf_indicators(close_prices)
 
+        current_price = indicators["current_price"]
+        sma_50 = indicators["sma_50"]
+        sma_200 = indicators["sma_200"]
+        rsi = indicators["rsi"]
+        drawdown = indicators["drawdown"]
 
-# ---------------- SEÑAL ----------------
+        if current_price is None:  # Should be caught by previous check, but defensive
+            return None
 
+        score_and_signal = self._generate_score_and_signal(
+            current_price, sma_50, sma_200, rsi, drawdown
+        )
 
-def _get_etf_signal(score: int) -> str:
-    if score >= 7:
-        return "COMPRAR FUERTE"
-    elif score >= 4:
-        return "COMPRAR"
-    elif score >= 2:
-        return "DCA NORMAL"
-    else:
-        return "ESPERAR"
-
-
-# ---------------- MAIN ----------------
-
-
-def analyze_etf() -> Optional[Dict]:
-    """
-    Analiza CSPX.L y devuelve señal de compra para estrategia DCA
-    """
-
-    # 1. Obtener análisis técnico desde prices.py
-    analysis = get_price_analysis(CSPX_TICKER)
-
-    # 2. Si no hay datos válidos, salimos
-    if analysis is None:
-        print(f"[ERROR] No se pudieron obtener datos de {CSPX_TICKER}")
-        return None
-
-    # 3. Calcular score
-    score = _calculate_etf_score(analysis)
-
-    # 4. Obtener señal
-    signal = _get_etf_signal(score)
-
-    # 5. Devolver resultado completo
-    return {
-        "ticker": CSPX_TICKER,
-        "current_price": analysis.get("current_price"),
-        "sma_50": analysis.get("sma_50"),
-        "sma_200": analysis.get("sma_200"),
-        "rsi": analysis.get("rsi"),
-        "drawdown": analysis.get("drawdown"),
-        "bullish_trend": analysis.get("bullish_trend"),
-        "score": score,
-        "signal": signal,
-    }
+        return {
+            "ticker": self.ticker,
+            "current_price": current_price,
+            "sma_50": sma_50,
+            "sma_200": sma_200,
+            "rsi": rsi,
+            "drawdown": drawdown,
+            "score": score_and_signal["score"],
+            "signal": score_and_signal["signal"],
+        }

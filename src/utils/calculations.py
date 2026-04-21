@@ -15,7 +15,9 @@ limitations under the License.
 """
 
 # calculations.py
-from typing import Optional, Union
+from typing import Optional, Union, cast
+
+import pandas as pd  # Add this import
 
 NumberLike = Union[int, float, str]
 
@@ -77,3 +79,70 @@ def debt_to_fcf_ratio(
         return None
 
     return total_deb / free_casht_flow
+
+
+# New functions for technical indicators
+
+
+def calculate_sma(series: pd.Series, window: int) -> Optional[float]:
+    if len(series) < window:
+        return None
+
+    result = cast(pd.Series, series.rolling(window=window).mean())
+
+    last_value = result.iat[-1]
+
+    if pd.isna(last_value):
+        return None
+
+    return float(last_value)
+
+
+def calculate_rsi(series: pd.Series, period: int = 14) -> Optional[float]:
+    if len(series) < period:
+        return None
+
+    delta = series.diff()
+
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+
+    avg_gain = cast(pd.Series, gain.rolling(window=period).mean())
+    avg_loss = cast(pd.Series, loss.rolling(window=period).mean())
+
+    avg_gain_last = avg_gain.iat[-1]
+    avg_loss_last = avg_loss.iat[-1]
+
+    # Validación de NaN (CRÍTICO en datos reales)
+    if pd.isna(avg_gain_last) or pd.isna(avg_loss_last):
+        return None
+
+    if avg_loss_last == 0:
+        return 100.0
+
+    rs = avg_gain_last / avg_loss_last
+    rsi = 100 - (100 / (1 + rs))
+
+    return float(rsi)
+
+
+def calculate_drawdown_from_annual_high(series: pd.Series) -> Optional[float]:
+    """
+    Calcula el drawdown desde el máximo anual (52 semanas).
+    Se asume que la serie contiene al menos 1 año de datos.
+    """
+    if series.empty:
+        return None
+
+    # Obtener el máximo de los últimos 52 semanas (aproximadamente 252 días de trading)
+    # yfinance '1y' period gives 1 year of data, so max() on the whole series is fine.
+    max_52w = series.max()
+    current_price = series.iat[-1]
+
+    if pd.isna(max_52w) or pd.isna(current_price):
+        return None
+
+    if max_52w == 0:  # Avoid division by zero
+        return None
+
+    return float((current_price - max_52w) / max_52w)
