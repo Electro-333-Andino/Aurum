@@ -24,18 +24,43 @@ limitations under the License.
         <link rel="stylesheet" href="/static/style.css" />
     </head>
     <body>
-        <div class="card">
-            <h1
-                style="
-                    background: var(--gold-metallic);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                "
-            >
-                AURUM PROJECT
-            </h1>
-            <p>Motor de Análisis Financiero v1.0</p>
-            <button class="btn-gold">Consultar CSPX.L</button>
+        <div class="container">
+            <h1>Aurum</h1>
+            <p>Análisis de ETF: CSPX.L</p>
+
+            <div id="resultado" style="margin: 20px 0; min-height: 50px">
+                <p>Presiona el botón para iniciar escaneo...</p>
+            </div>
+
+            <button class="btn-gold" onclick="consultarDatos()">
+                Consultar CSPX.L
+            </button>
         </div>
+
+        <script>
+            async function consultarDatos() {
+                const resDiv = document.getElementById("resultado");
+                resDiv.innerHTML = "Consultando mercado...";
+
+                try {
+                    const respuesta = await fetch("/api/analisis/cspxl");
+                    const data = await respuesta.json();
+
+                    resDiv.innerHTML = `
+                        <div style="border: 1px solid ${data.color}; padding: 20px; border-radius: 10px; background: #111;">
+                            <h2 style="color: ${data.color}; margin-top: 0;">${data.ticker}</h2>
+                            <p style="font-size: 1.2rem;">Precio: <span style="color: #fff;">$${data.precio}</span></p>
+                            <p>RSI: <strong>${data.rsi}</strong></p>
+                            <p>Score: <span style="font-size: 1.5rem; color: ${data.color}">${data.score}/11</span></p>
+                            <div style="margin-top: 15px; padding: 10px; border: 1px solid ${data.color};">
+                                <h3 style="margin: 0; color: ${data.color}">${data.recomendacion}</h3>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    resDiv.innerHTML = "Error al conectar con el motor Aurum.";
+                }
+            }
+        </script>
     </body>
 </html>

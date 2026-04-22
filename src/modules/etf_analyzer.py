@@ -20,8 +20,8 @@ limitations under the License.
 from typing import Dict, Optional, Union, cast
 
 import pandas as pd
-import yfinance as yf
 
+from src.modules.prices import fetch_history
 from src.utils.calculations import (
     calculate_drawdown_from_annual_high,
     calculate_rsi,
@@ -36,24 +36,10 @@ class ETFAnalyzer:
         self.history_period = "1y"  # Data for 1 year to calculate 52-week high
 
     def _fetch_historical_data(self) -> Optional[pd.Series]:
-        """Fetches historical 'Close' price data for the ETF."""
-        try:
-            stock = yf.Ticker(self.ticker)
-            hist = stock.history(period=self.history_period)
-
-            if hist.empty or "Close" not in hist:
-                return None
-
-            close_prices = cast(pd.Series, hist["Close"])
-            close_prices = close_prices.dropna()
-
-            if close_prices.empty:
-                return None
-
-            return close_prices
-        except Exception as e:
-            print(f"[ERROR ETFAnalyzer] Error fetching data for {self.ticker}: {e}")
-            return None
+        """
+        Obtiene los datos a través del módulo centralizado de precios.
+        """
+        return fetch_history(self.ticker, self.history_period)
 
     def _calculate_etf_indicators(
         self, close_prices: pd.Series
@@ -130,7 +116,7 @@ class ETFAnalyzer:
 
     def analyze_etf(self) -> Optional[Dict]:
         """
-        Main method to analyze the ETF and return the buy signal.
+        Orquesta el flujo: Obtención -> Indicadores -> Señal.
         """
         close_prices = self._fetch_historical_data()
         if close_prices is None:
@@ -139,25 +125,24 @@ class ETFAnalyzer:
         indicators = self._calculate_etf_indicators(close_prices)
 
         current_price = indicators["current_price"]
-        sma_50 = indicators["sma_50"]
-        sma_200 = indicators["sma_200"]
-        rsi = indicators["rsi"]
-        drawdown = indicators["drawdown"]
-
-        if current_price is None:  # Should be caught by previous check, but defensive
+        if current_price is None:
             return None
 
         score_and_signal = self._generate_score_and_signal(
-            current_price, sma_50, sma_200, rsi, drawdown
+            current_price,
+            indicators["sma_50"],
+            indicators["sma_200"],
+            indicators["rsi"],
+            indicators["drawdown"],
         )
 
         return {
             "ticker": self.ticker,
             "current_price": current_price,
-            "sma_50": sma_50,
-            "sma_200": sma_200,
-            "rsi": rsi,
-            "drawdown": drawdown,
+            "sma_50": indicators["sma_50"],
+            "sma_200": indicators["sma_200"],
+            "rsi": indicators["rsi"],
+            "drawdown": indicators["drawdown"],
             "score": score_and_signal["score"],
             "signal": score_and_signal["signal"],
         }

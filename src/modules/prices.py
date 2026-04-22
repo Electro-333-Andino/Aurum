@@ -41,6 +41,30 @@ def _is_bullish_trend(sma_50: Optional[float], sma_200: Optional[float]) -> bool
 # ---------------- MAIN ----------------
 
 
+def fetch_history(ticker: str, period: str = "1y") -> Optional[pd.Series]:
+    """
+    Única fuente de verdad para obtener el historial de precios de cierre.
+    Centraliza la lógica de yfinance y la limpieza de datos.
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period=period)
+
+        if hist.empty or "Close" not in hist:
+            return None
+
+        close_prices = cast(pd.Series, hist["Close"])
+        close_prices = close_prices.dropna()
+
+        if close_prices.empty:
+            return None
+
+        return close_prices
+    except Exception as e:
+        print(f"[ERROR prices] Error al obtener historial para {ticker}: {e}")
+        return None
+
+
 def get_price_analysis(ticker: str) -> Optional[Dict]:
     """
     Obtiene datos técnicos y detecta oportunidad de compra
