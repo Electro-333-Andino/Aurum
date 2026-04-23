@@ -20,47 +20,69 @@ limitations under the License.
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <title>Aurum - Dashboard</title>
-        <link rel="stylesheet" href="/static/style.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Aurum | Inteligencia Financiera</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Syne:wght@700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css" />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', path='/style.css') }}"
+        />
     </head>
     <body>
         <div class="container">
-            <h1>Aurum</h1>
-            <p>Análisis de ETF: CSPX.L</p>
+            <header class="main-header">
+                <h1 class="logo-text">AURUM<span>.</span></h1>
+                <p class="tagline">DATA-DRIVEN FINANCIAL ENGINE</p>
+            </header>
 
-            <div id="resultado" style="margin: 20px 0; min-height: 50px">
-                <p>Presiona el botón para iniciar escaneo...</p>
-            </div>
+            <main class="bento-grid">
+                <section class="card card-hero metallic-gold">
+                    <div class="card-inner">
+                        <h3>Aurum Score</h3>
+                        <div class="metric-value giant-text">8.5</div>
+                        <p class="status-badge">COMPRA FUERTE</p>
+                    </div>
+                </section>
 
-            <button class="btn-gold" onclick="consultarDatos()">
-                Consultar CSPX.L
-            </button>
+                <section class="card metallic-blue">
+                    <div class="card-inner">
+                        <h3>RSI (14)</h3>
+                        <div class="metric-value">38.2</div>
+                        <div class="mini-chart blue-glow"></div>
+                    </div>
+                </section>
+
+                <section class="card metallic-green">
+                    <div class="card-inner">
+                        <h3>SMA 200</h3>
+                        <div class="metric-value">$452.10</div>
+                        <p class="caption">Tendencia Alcista</p>
+                    </div>
+                </section>
+
+                <section class="card metallic-fuchsia">
+                    <div class="card-inner">
+                        <h3>Anual Drawdown</h3>
+                        <div class="metric-value">-12.4%</div>
+                        <p class="caption">Riesgo Moderado</p>
+                    </div>
+                </section>
+
+                <section class="card card-wide">
+                    <div class="card-inner">
+                        <h3>Análisis Técnico Resumido</h3>
+                        <p class="text-block">
+                            El activo mantiene soporte sobre la SMA 200. El RSI
+                            indica una zona de acumulación saludable con baja
+                            volatilidad en el cierre diario.
+                        </p>
+                    </div>
+                </section>
+            </main>
         </div>
-
-        <script>
-            async function consultarDatos() {
-                const resDiv = document.getElementById("resultado");
-                resDiv.innerHTML = "Consultando mercado...";
-
-                try {
-                    const respuesta = await fetch("/api/analisis/cspxl");
-                    const data = await respuesta.json();
-
-                    resDiv.innerHTML = `
-                        <div style="border: 1px solid ${data.color}; padding: 20px; border-radius: 10px; background: #111;">
-                            <h2 style="color: ${data.color}; margin-top: 0;">${data.ticker}</h2>
-                            <p style="font-size: 1.2rem;">Precio: <span style="color: #fff;">$${data.precio}</span></p>
-                            <p>RSI: <strong>${data.rsi}</strong></p>
-                            <p>Score: <span style="font-size: 1.5rem; color: ${data.color}">${data.score}/11</span></p>
-                            <div style="margin-top: 15px; padding: 10px; border: 1px solid ${data.color};">
-                                <h3 style="margin: 0; color: ${data.color}">${data.recomendacion}</h3>
-                            </div>
-                        </div>
-                    `;
-                } catch (error) {
-                    resDiv.innerHTML = "Error al conectar con el motor Aurum.";
-                }
-            }
-        </script>
     </body>
 </html>

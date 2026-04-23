@@ -16,50 +16,169 @@ limitations under the License.
 
 /* web/static/style.css */
 
+/* Variables de Diseño */
 :root {
-    /* Paleta Metalizada (Máximo 6 tonos) */
-    --gold-metallic: linear-gradient(
-        145deg,
-        #bf953f,
-        #fcf6ba,
-        #b38728,
-        #fbf5b7,
-        #aa771c
-    );
-    --red-metallic: linear-gradient(145deg, #8b0000, #ff4d4d, #a30000);
-    --blue-metallic: linear-gradient(145deg, #001f3f, #0074d9, #001f3f);
-    --bg-dark: #0d0d0d; /* Negro profundo para minimalismo */
-    --text-silver: #e0e0e0; /* Gris plata para lectura */
-    --border-gold: #aa771c; /* Color de acento para bordes */
+    --bg-black: #000000;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 255, 255, 0.1);
+
+    /* Gradientes Metálicos */
+    --grad-gold: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+    --grad-green: linear-gradient(135deg, #00ff87 0%, #00a36c 100%);
+    --grad-blue: linear-gradient(135deg, #00d1ff 0%, #0077b5 100%);
+    --grad-fuchsia: linear-gradient(135deg, #ff00e5 0%, #a100f2 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background-color: var(--bg-dark);
-    color: var(--text-silver);
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    background-color: var(--bg-black);
+    color: #ffffff;
+    font-family: "Inter", sans-serif;
+    line-height: 1.6;
+    padding: 40px 20px;
 }
 
-.card {
-    background: #1a1a1a;
-    border: 1px solid var(--border-gold);
-    padding: 2rem;
-    border-radius: 10px;
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Header & Logo */
+.main-header {
+    margin-bottom: 50px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
-.btn-gold {
-    background: var(--gold-metallic);
-    border: none;
-    padding: 10px 20px;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
+.logo-text {
+    font-family: "Syne", sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    letter-spacing: -3px;
+}
+
+.logo-text span {
+    background: var(--grad-gold);
+    -webkit-background-clip: text; /* Compatibilidad Webkit */
+    background-clip: text; /* Propiedad Estándar */
+    -webkit-text-fill-color: transparent;
+}
+
+.tagline {
+    font-size: 0.75rem;
+    letter-spacing: 5px;
+    color: #666;
+    margin-top: -10px;
+}
+
+/* Bento Grid */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+    gap: 20px;
+}
+
+/* Estilo de Tarjetas (Bento Box) */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.card h3 {
+    font-family: "Syne", sans-serif;
+    font-size: 0.8rem;
     text-transform: uppercase;
+    color: #888;
+    margin-bottom: 15px;
+}
+
+/* Tipografía de Métricas */
+.metric-value {
+    font-family: "Syne", sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.giant-text {
+    font-size: 6rem;
+    line-height: 1;
+}
+
+/* Aplicación de Gradientes Metálicos */
+.metallic-gold .metric-value {
+    background: var(--grad-gold);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.metallic-blue .metric-value {
+    background: var(--grad-blue);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.metallic-green .metric-value {
+    background: var(--grad-green);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.metallic-fuchsia .metric-value {
+    background: var(--grad-fuchsia);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Layouts específicos de la Grid */
+.card-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+.card-wide {
+    grid-column: span 2;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+    }
+    .card-hero,
+    .card-wide {
+        grid-column: span 1;
+    }
+    .logo-text {
+        font-size: 3rem;
+    }
+    .giant-text {
+        font-size: 4rem;
+    }
 }
