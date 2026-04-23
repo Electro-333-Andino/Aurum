@@ -26,63 +26,153 @@ limitations under the License.
             href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Syne:wght@700;800&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css" />
         <link
             rel="stylesheet"
             href="{{ url_for('static', path='/style.css') }}"
         />
+        <!-- No necesitas la línea duplicada de style.css -->
     </head>
     <body>
         <div class="container">
             <header class="main-header">
                 <h1 class="logo-text">AURUM<span>.</span></h1>
                 <p class="tagline">DATA-DRIVEN FINANCIAL ENGINE</p>
+
+                <nav class="main-nav">
+                    <button class="nav-button active" data-view="portfolio">
+                        Portafolio
+                    </button>
+                    <button class="nav-button" data-view="etf">
+                        Análisis ETF
+                    </button>
+                    <button class="nav-button" data-view="dividendos">
+                        Dividendos
+                    </button>
+                    <button class="nav-button" data-view="noticias">
+                        Noticias
+                    </button>
+                </nav>
             </header>
 
             <main class="bento-grid">
-                <section class="card card-hero metallic-gold">
+                <!-- Portafolio View -->
+                <section id="portfolio-view" class="view active card-wide">
                     <div class="card-inner">
-                        <h3>Aurum Score</h3>
-                        <div class="metric-value giant-text">8.5</div>
-                        <p class="status-badge">COMPRA FUERTE</p>
+                        <h3>Portafolio Actual</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Símbolo</th>
+                                        <th>Nombre</th>
+                                        <th>Precio</th>
+                                        <th>Cambio %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="portfolio-data">
+                                    <tr>
+                                        <td colspan="4">
+                                            Cargando datos del portafolio...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
-                <section class="card metallic-blue">
+                <!-- ETF Analysis View -->
+                <section
+                    id="etf-view"
+                    class="view hidden card-hero metallic-gold"
+                >
                     <div class="card-inner">
-                        <h3>RSI (14)</h3>
-                        <div class="metric-value">38.2</div>
-                        <div class="mini-chart blue-glow"></div>
-                    </div>
-                </section>
-
-                <section class="card metallic-green">
-                    <div class="card-inner">
-                        <h3>SMA 200</h3>
-                        <div class="metric-value">$452.10</div>
-                        <p class="caption">Tendencia Alcista</p>
-                    </div>
-                </section>
-
-                <section class="card metallic-fuchsia">
-                    <div class="card-inner">
-                        <h3>Anual Drawdown</h3>
-                        <div class="metric-value">-12.4%</div>
-                        <p class="caption">Riesgo Moderado</p>
-                    </div>
-                </section>
-
-                <section class="card card-wide">
-                    <div class="card-inner">
-                        <h3>Análisis Técnico Resumido</h3>
-                        <p class="text-block">
-                            El activo mantiene soporte sobre la SMA 200. El RSI
-                            indica una zona de acumulación saludable con baja
-                            volatilidad en el cierre diario.
+                        <h3>Análisis ETF: {{ etf_ticker }}</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <tbody id="etf-data">
+                                    <tr>
+                                        <td>Cargando datos del ETF...</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="caption" id="etf-signal">
+                            Señal: Cargando...
                         </p>
+                    </div>
+                </section>
+
+                <!-- Dividendos View -->
+                <section id="dividendos-view" class="view hidden card-wide">
+                    <div class="card-inner">
+                        <h3>Candidatas a Dividendos</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Símbolo</th>
+                                        <th>Score</th>
+                                        <th>Señal</th>
+                                        <th>Dividend Yield</th>
+                                        <th>Payout Ratio</th>
+                                        <th>Debt/FCF</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dividendos-data">
+                                    <tr>
+                                        <td colspan="6">
+                                            Cargando candidatas a dividendos...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Noticias View -->
+                <section id="noticias-view" class="view hidden card-wide">
+                    <div class="card-inner">
+                        <h3>Noticias Relevantes</h3>
+                        <div class="news-controls">
+                            <button
+                                class="news-type-button active"
+                                data-news-type="macro"
+                            >
+                                Noticias Macro
+                            </button>
+                            <button
+                                class="news-type-button"
+                                data-news-type="company"
+                            >
+                                Noticias por Empresa
+                            </button>
+                            <input
+                                type="text"
+                                id="company-news-ticker-input"
+                                placeholder="Símbolo (ej: AAPL)"
+                                class="text-input"
+                            />
+                            <button
+                                id="search-company-news"
+                                class="search-button"
+                            >
+                                Buscar
+                            </button>
+                        </div>
+                        <div id="macro-news-list" class="news-list active">
+                            <p>Cargando noticias macro...</p>
+                        </div>
+                        <div id="company-news-list" class="news-list hidden">
+                            <p>Seleccione una empresa para ver noticias...</p>
+                        </div>
                     </div>
                 </section>
             </main>
         </div>
+
+        <script src="{{ url_for('static', path='/js/main.js') }}"></script>
     </body>
 </html>

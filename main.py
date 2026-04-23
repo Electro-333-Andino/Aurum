@@ -17,34 +17,15 @@ limitations under the License.
 # main.py
 # Coordinador principal — sin lógica de negocio
 
+from src.config import CANDIDATES, ETF_TICKER, PORTFOLIO  # Import from config
 from src.modules import report
-from src.modules.etf_analyzer import analyze_etf_for_cli  # Updated import for CLI
+from src.modules.etf_analyzer import analyze_etf_for_cli
 from src.modules.news import get_company_news, get_macro_news
 from src.modules.prices import get_portfolio_prices
 from src.modules.scanner import scan_ticker
 
 # ---------------- CONFIGURACIÓN ----------------
-
-# Portafolio actual
-PORTFOLIO = ["VLO", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "JNJ", "O"]
-
-# Candidatas a dividendos
-CANDIDATES = [
-    # Healthcare
-    "ABBV",  # AbbVie
-    "MDT",  # Medtronic
-    # Consumer Defensive
-    "KO",  # Coca-Cola
-    "PG",  # Procter & Gamble
-    "CL",  # Colgate-Palmolive
-    # Tecnología
-    "TXN",  # Texas Instruments
-    # Infraestructura energética
-    "ENB",  # Enbridge
-    # Financial Services
-    "JPM",  # JPMorgan Chase
-    "BLK",  # BlackRock
-]
+# PORTFOLIO and CANDIDATES are now imported from src/config.py
 
 
 # ---------------- MAIN ----------------
@@ -72,7 +53,9 @@ def run_terminal_app() -> None:  # Renamed from run()
 
     # 5. Análisis ETF
     # Usa la nueva función auxiliar para el CLI
-    etf_data = analyze_etf_for_cli()  # Changed to analyze_etf_for_cli()
+    etf_data = analyze_etf_for_cli(
+        ETF_TICKER
+    )  # Changed to analyze_etf_for_cli(ETF_TICKER)
 
     # 6. Reporte en terminal
     report.display_portfolio(portfolio_data)
