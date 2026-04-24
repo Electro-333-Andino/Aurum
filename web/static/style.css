@@ -1,466 +1,214 @@
 /* web/static/style.css */
 
-/* Variables de Diseño */
 :root {
     --bg-black: #000000;
-    --card-bg: rgba(255, 255, 255, 0.03);
-    --border-color: rgba(255, 255, 255, 0.1);
-
-    /* Gradientes Metálicos */
-    --grad-gold: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
-    --grad-green: linear-gradient(135deg, #00ff87 0%, #00a36c 100%);
-    --grad-blue: linear-gradient(135deg, #00d1ff 0%, #0077b5 100%);
-    --grad-fuchsia: linear-gradient(135deg, #ff00e5 0%, #a100f2 100%);
-    --grad-red: linear-gradient(
-        135deg,
-        #ff4136 0%,
-        #cc292c 100%
-    ); /* Nuevo para "ESPERAR" */
-    --grad-orange: linear-gradient(
-        135deg,
-        #ff851b 0%,
-        #ff6200 100%
-    ); /* Nuevo para "DCA NORMAL" */
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    --card-bg: #0d0d0d;
+    --gold: #ffd700;
+    --blue: #00d1ff;
+    --glass: rgba(255, 255, 255, 0.05);
 }
 
 body {
     background-color: var(--bg-black);
-    color: #ffffff;
+    color: #fff;
     font-family: "Inter", sans-serif;
-    line-height: 1.6;
-    padding: 40px 20px;
+    padding-top: 100px;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
+/* Scrollbar Sofisticado */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #050505;
+}
+::-webkit-scrollbar-thumb {
+    background: #222;
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
 }
 
-/* Header & Logo */
+/* Header */
 .main-header {
-    margin-bottom: 50px;
     text-align: center;
+    position: sticky;
+    top: 0;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 15px 0;
+    z-index: 1000;
+    border-bottom: 1px solid #222;
 }
-
 .logo-text {
     font-family: "Syne", sans-serif;
-    font-size: 4rem;
-    font-weight: 800;
-    letter-spacing: -3px;
+    font-size: 2.5rem;
 }
-
 .logo-text span {
-    background: var(--grad-gold);
-    -webkit-background-clip: text; /* Compatibilidad Webkit */
-    background-clip: text; /* Propiedad Estándar */
-    -webkit-text-fill-color: transparent;
+    color: var(--gold);
 }
 
-.tagline {
-    font-size: 0.75rem;
-    letter-spacing: 5px;
-    color: #666;
-    margin-top: -10px;
-    margin-bottom: 30px; /* Added spacing below tagline */
-}
-
-/* Main Navigation */
+/* Nav */
 .main-nav {
     display: flex;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 40px;
-    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+    margin-top: 10px;
 }
-
 .nav-button {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-family: "Inter", sans-serif;
-    font-size: 0.9rem;
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 10px 25px;
+    border-radius: 30px;
     font-weight: 600;
-    color: #ffffff;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    backdrop-filter: blur(8px);
+    transition: 0.3s;
 }
-
-.nav-button:hover:not(.active) {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.05);
-}
-
 .nav-button.active {
-    background: var(--grad-gold);
-    color: #000000; /* Texto oscuro para contraste en botón activo */
-    border-color: #ffd700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    background: var(--gold);
+    color: #000;
+    border: none;
 }
 
-/* Bento Grid */
+/* Grid BENTO - SECCIONES */
 .bento-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+.section-wrapper {
+    background: var(--glass);
+    padding: 30px;
+    border-radius: 25px;
+    border: 1px solid #1a1a1a;
+}
+
+/* ETF GRID */
+#etf-view {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: minmax(180px, auto);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    align-items: center;
+}
+.etf-info {
+    text-align: center;
 }
 
-/* Estilo de Tarjetas (Bento Box) */
-.card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(12px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.card h3 {
-    font-family: "Syne", sans-serif;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 15px;
-}
-
-/* Tipografía de Métricas */
-.metric-value {
-    font-family: "Syne", sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.giant-text {
-    font-size: 6rem;
-    line-height: 1;
-}
-
-/* Aplicación de Gradientes Metálicos */
-.metallic-gold .metric-value,
-.status-badge.gold {
-    background: var(--grad-gold);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.metallic-blue .metric-value,
-.status-badge.blue {
-    background: var(--grad-blue);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.metallic-green .metric-value,
-.status-badge.green {
-    background: var(--grad-green);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.metallic-fuchsia .metric-value,
-.status-badge.fuchsia {
-    background: var(--grad-fuchsia);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* Added for red signal */
-.status-badge.red {
-    background: var(--grad-red);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* Added for orange signal */
-.status-badge.orange {
-    background: var(--grad-orange);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* Layouts específicos de la Grid */
-.card-hero {
-    grid-column: span 2;
-    grid-row: span 2;
-}
-.card-wide {
-    grid-column: span 2;
-}
-
-/* View switching */
-.view {
-    display: contents; /* Allows children to participate in the grid */
-}
-
-.view.hidden {
-    display: none;
-}
-
-/* Table styles */
+/* Tablas */
 .table-container {
-    overflow-x: auto;
-    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 15px;
+    background: #080808;
+    border: 1px solid #222;
 }
-
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
 }
-
-.data-table th,
-.data-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
 .data-table th {
-    font-family: "Inter", sans-serif;
-    font-size: 0.75rem;
+    position: sticky;
+    top: 0;
+    background: #1a1a1a;
+    color: var(--gold);
+    padding: 15px;
     text-transform: uppercase;
-    color: #aaa;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.data-table td {
-    font-family: "Inter", sans-serif;
-    font-size: 0.9rem;
-    color: #e0e0e0;
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.data-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Status Badge (new general style for signals) */
-.status-badge {
-    font-family: "Inter", sans-serif;
     font-size: 0.8rem;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 6px;
-    display: inline-block;
-    margin-top: 10px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    /* Base style, colors applied by specific classes like .gold, .blue etc. */
+}
+.data-table td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #1a1a1a;
 }
 
+/* Signals & Badges */
+.status-badge {
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    display: inline-block;
+}
 .status-badge.gold {
-    /* COMPRA FUERTE */
-    background: linear-gradient(90deg, #ffd70033, #ffd70000);
-    border: 1px solid #ffd70088;
-    color: #ffd700;
-    -webkit-text-fill-color: initial; /* Override text-fill-color from metric-value if it's applied */
+    background: var(--gold) !important;
+    color: #000 !important;
 }
 .status-badge.blue {
-    /* COMPRAR */
-    background: linear-gradient(90deg, #00d1ff33, #00d1ff00);
-    border: 1px solid #00d1ff88;
-    color: #00d1ff;
-    -webkit-text-fill-color: initial;
+    background: var(--blue) !important;
+    color: #000 !important;
 }
 .status-badge.orange {
-    /* DCA NORMAL */
-    background: linear-gradient(90deg, #ff851b33, #ff851b00);
-    border: 1px solid #ff851b88;
-    color: #ff851b;
-    -webkit-text-fill-color: initial;
+    background: #ff851b !important;
+    color: #fff !important;
 }
 .status-badge.red {
-    /* ESPERAR / DESCARTAR */
-    background: linear-gradient(90deg, #ff413633, #ff413600);
-    border: 1px solid #ff413688;
-    color: #ff4136;
-    -webkit-text-fill-color: initial;
-}
-.status-badge.grey {
-    /* Default / N/A */
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.05)
-    );
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ccc;
-    -webkit-text-fill-color: initial;
+    background: #ff4136 !important;
+    color: #fff !important;
 }
 
-/* Form Elements */
-.text-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 15px;
-    font-family: "Inter", sans-serif;
-    font-size: 0.9rem;
-    color: #ffffff;
-    outline: none;
-    transition: border-color 0.2s ease-in-out;
-}
-
-.text-input:focus {
-    border-color: #ffd700;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-}
-
-.search-button {
-    background: var(--grad-gold);
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-family: "Inter", sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #000000;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-}
-
-.search-button:hover {
-    opacity: 0.9;
-}
-
-/* News Section */
-.news-controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.news-type-button {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 8px 15px;
-    font-family: "Inter", sans-serif;
-    font-size: 0.85rem;
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-
-.news-type-button:hover:not(.active) {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.news-type-button.active {
-    background: var(--grad-blue);
-    color: #ffffff;
-    border-color: #00d1ff;
-    box-shadow: 0 0 10px rgba(0, 209, 255, 0.4);
-}
-
+/* Noticias Bento */
 .news-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
 }
-
 .news-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: #111;
     padding: 20px;
-    backdrop-filter: blur(8px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-align: left;
-    display: flex; /* For flexible content alignment */
-    flex-direction: column;
-    justify-content: space-between; /* Pushes source/date to bottom */
+    border-radius: 20px;
+    border: 1px solid #222;
+    transition: 0.3s;
 }
-
 .news-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: var(--gold);
+}
+.news-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+.news-type-button {
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+.news-type-button.active {
+    background: var(--blue);
+    color: #000;
+    border-color: var(--blue);
+    font-weight: bold;
+}
+.search-button {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+}
+#company-news-ticker-input {
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 20px;
 }
 
-.news-card h4 {
-    font-family: "Syne", sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #e0e0e0;
-    margin-bottom: 10px;
-    line-height: 1.3;
+.text-green {
+    color: #00ff87 !important;
+    font-weight: bold;
 }
-
-.news-card p {
-    font-size: 0.85rem;
-    color: #aaa;
-    margin-bottom: 5px;
-}
-
-.news-card .source-date {
-    font-size: 0.75rem;
-    color: #777;
-    margin-top: 10px;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    .bento-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .news-list {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 600px) {
-    body {
-        padding: 20px 10px;
-    }
-    .bento-grid {
-        grid-template-columns: 1fr;
-    }
-    .card-hero,
-    .card-wide {
-        grid-column: span 1;
-    }
-    .logo-text {
-        font-size: 3rem;
-    }
-    .giant-text {
-        font-size: 4rem;
-    }
-    .main-nav {
-        flex-direction: column;
-        gap: 10px;
-    }
-    .nav-button {
-        width: 100%;
-    }
+.text-red {
+    color: #ff4136 !important;
+    font-weight: bold;
 }

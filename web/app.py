@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# All module imports should come after sys.path.append
 from src.config import CANDIDATES, ETF_TICKER, PORTFOLIO
 from src.modules.etf_analyzer import ETFAnalyzer
 from src.modules.fundamentals import get_clean_fundamentals
@@ -21,6 +22,8 @@ app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="web/static"), name="static")
 templates = Jinja2Templates(directory="web/templates")
+
+# ETF_TICKER is now imported from src/config.py
 
 
 @app.get("/")
